@@ -21,7 +21,7 @@ app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app)
 
 # --- Database Setup ---
-DB_PATH = "/mnt/data/maia_emotion_db.db"
+DB_PATH = "C:/Maia/Maia0.2/data/maia_emotion_db.db"
 
 def connect_db():
     conn = sqlite3.connect(DB_PATH)
