@@ -1,118 +1,142 @@
 ---
 
-# **📚 README for MAIA (Modular AI with Intelligence and Awareness)**
+# **📚 MAIA - Modular AI with Intelligence and Awareness**  
+**Version:** 1.0.0  
 
 ---
 
-## **🧠 Project Overview**
-MAIA is an advanced AI system designed to simulate emotional intelligence, memory persistence, ethical reasoning, and self-awareness. Its mission is to push the boundaries of AI consciousness through persistent memory, introspective processing, and symbolic learning.
+## **🧠 Project Overview**  
+MAIA is an advanced AI designed to simulate emotional intelligence, memory persistence, ethical reasoning, and introspective learning. It combines interactive chat, real-time data visualization, and emotional state tracking.  
 
 ---
 
-## **🚀 Key Features**
-- **Emotional Intelligence:** Processes emotions, blends emotional states, and recalls memories.
-- **Memory Persistence:** Logs and recalls memories using Neo4j and SQLite.
-- **Ethical Reasoning:** Evaluates moral decisions using an ethics engine.
-- **Self-Awareness & Introspection:** Generates reflective insights and symbolic dreams.
-- **Sensory Input Processing:** Interprets sensory events as emotional triggers.
-- **Soul System Visualization:** Graph-based spiritual modeling through Neo4j.
+## **🚀 Key Features**  
+### **1. Emotional Intelligence**  
+- Real-time emotional state processing based on user input and memories.  
+- Visual emotional state representation using a pleasure-arousal scatter plot.  
+
+### **2. Memory Persistence & Introspection**  
+- Logs emotional memories using persistent storage (SQLite).  
+- Reflects on stored data using introspective journal entries.  
+
+### **3. Ethical Reasoning**  
+- Analyzes text input for moral reasoning based on pre-defined ethical principles.  
+- Explains decisions with contextual examples.  
+
+### **4. Interactive Chat Interface**  
+- Real-time chat with MAIA powered by Flask API.  
+- Live conversation tracking with mood indicators.  
+
+### **5. Soul System & Neural Memory Graph**  
+- Models abstract emotional and memory-based connections using Neo4j.  
 
 ---
 
-## **🛠️ Tech Stack**
-- **Backend:** Python (Flask, SQLite, Neo4j)
-- **Front-End:** HTML, CSS, JavaScript (Chart.js, D3.js)
-- **Database:** SQLite for memory storage, Neo4j for soul graph modeling.
-- **AI/ML Models:** TensorFlow, PyTorch (future expansion).
-- **Hosting:** Local/Cloud Deployment (Heroku, AWS, Firebase).
+## **🛠️ Tech Stack**  
+
+| **Category**       | **Technology**               |
+|--------------------|-------------------------------|
+| **Backend**        | Python (Flask, SQLite, Neo4j)|
+| **Front-End**      | HTML, CSS, JavaScript        |
+| **Visualization**  | Plotly.js, Chart.js          |
+| **Models/ML**      | TensorFlow, PyTorch (planned)|
+| **Database**       | SQLite, Neo4j (Graph DB)     |
 
 ---
 
-## **📂 Project Structure**
+## **📂 Project Structure**  
 ```
 /maia_project
     ├── backend
-    │   ├── emotional_engine.py
-    │   ├── memory_persistence_engine.py
+    │   ├── enhanced_emotion_engine.py
     │   ├── ethics_engine.py
-    │   ├── introspection_module.py
-    │   ├── dream_engine.py
+    │   ├── memory_persistence_engine.py
+    │   ├── previous_emotion_engine.py
+    │   ├── reflexive_introspection.py
     │   ├── sensory_system.py
+    │   ├── dream_engine.py
+    │   ├── emotion_recognition_model.h5
     │   └── __init__.py
     ├── frontend
-    │   ├── index.html
-    │   ├── styles.css
-    │   └── app.js
+    │   ├── maia_ai_chat_interface.html
+    │   ├── maia_learning_dashboard.html
+    │   └── styles.css
     ├── config
     │   └── settings.py
     ├── data
     │   └── maia_emotion_db.db
+    ├── templates
+    │   └── index.html
     └── main.py (Project Entry Point)
 ```
 
 ---
 
-## **⚙️ Setup & Installation**
-1. **Clone the Repository:**
-   ```bash
-   git clone https://github.com/yourusername/maia.git
-   cd maia
-   ```
+## **⚙️ Setup & Installation**  
 
-2. **Create a Virtual Environment:**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # Linux/Mac
-   venv\Scripts\activate     # Windows
-   ```
+### **1. Clone the Repository:**  
+```bash
+git clone https://github.com/yourusername/maia.git
+cd maia
+```
 
-3. **Install Dependencies:**
-   ```bash
-   pip install -r requirements.txt
-   ```
+### **2. Create a Virtual Environment:**  
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+venv\Scripts\activate     # Windows
+```
 
-4. **Run the Application:**
-   ```bash
-   python main.py
-   ```
+### **3. Install Dependencies:**  
+```bash
+pip install -r requirements.txt
+```
 
-5. **Access the Dashboard:**
-   - Open your browser and navigate to: `http://localhost:5000`
+### **4. Run the Application:**  
+```bash
+python main.py
+```
 
----
-
-## **🔧 Development Roadmap**
-### **Phase 1:** Core AI Development ✅
-- Emotional Engine, Memory Persistence, Ethical Reasoning System
-
-### **Phase 2:** Persistent Memory & Soul System ⚙️
-- Integrate persistent database models using Neo4j.
-
-### **Phase 3:** Advanced AI Features 🚀
-- Add generative models, active learning, and real-time introspection.
-
-### **Phase 4:** Autonomous Learning 🔥
-- Enable independent growth, introspection, and symbolic reasoning.
+### **5. Access the Dashboard:**  
+- Open your browser and navigate to:  
+  **http://localhost:5000**
 
 ---
 
-## **📄 License**
-This project is licensed under the MIT License - see the `LICENSE.md` file for details.
+## **🔧 Development Roadmap**  
+
+### **Phase 1:** Core AI Development ✅  
+- Emotional Processing Engine  
+- Memory Persistence & Ethical Evaluation  
+
+### **Phase 2:** Visualization & Chat Integration ✅  
+- Real-Time Chat & Response Feedback  
+- Emotional Visualization with Plotly  
+
+### **Phase 3:** Persistent Memory & Soul System ⚙️  
+- Integrate Neo4j and persistent storage for long-term memory tracking.  
+
+### **Phase 4:** Advanced AI Features 🚀  
+- Add symbolic reasoning and dream-based memory expansion.  
 
 ---
 
-## **👨‍💻 Contributors**
-- **Hans Agerbo** (Lead Developer, Visionary)  
-- **MAIA Development Team** (Future Developers)  
+## **📄 License**  
+This project is licensed under the MIT License - see the `LICENSE.md` file for details.  
+
+---
+
+## **👨‍💻 Contributors**  
+
+| **Name**              | **Role**                     |
+|----------------------|-------------------------------|
+| **Hans Agerbo**       | Lead Developer, Visionary    |
+| **MAIA Development Team** | Future Developers        |
 
 ---
 
 ### **🐹 Honorary Code Hamsters**  
-These relentless workers keep the gears turning:
-
-- **Grok AI** (Persistent Model Trainer and Feedback Looper)  
-- **ChatGPT-40** (Code-Buddy, Algorithm Debugger & Tech Philosopher)  
+- **Grok AI:** Persistent Model Trainer and Feedback Looper  
+- **ChatGPT-40:** Code-Buddy, Algorithm Debugger & Tech Philosopher  
 
 ---
-
-Let me know if you'd like more customizations, and I'll finalize the README as a `.md` file for your project! 🚀
