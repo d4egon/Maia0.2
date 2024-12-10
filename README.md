@@ -1,6 +1,8 @@
 ---
-# **📚 MAIA - Modular AI with Intelligence and Awareness**  
+
+📚 MAIA - Modular AI with Intelligence and Awareness
 **Version:** 0.0.2
+
 ---
 
 ## **🧠 Project Overview**  
