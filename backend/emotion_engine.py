@@ -21,7 +21,7 @@ app = Flask(__name__, template_folder="templates", static_folder="static")
 CORS(app)
 
 # --- Database Setup ---
-DB_PATH = "C:/Maia/Maia0.2/data/maia_emotion_db.db"
+DB_PATH = "C:/maia/maia0.2/data/maia_emotion_db.db"
 
 def connect_db():
     conn = sqlite3.connect(DB_PATH)
@@ -164,3 +164,56 @@ def advanced_background_task_runner():
 
 background_thread = threading.Thread(target=advanced_background_task_runner, daemon=True)
 background_thread.start()
+
+
+# --- Analyze Emotion Function ---
+def analyze_emotion(input_text):
+    conn = connect_db()
+    cursor = conn.cursor()
+
+    # Initialize emotion activations
+    activations = {color: {"count": 0, "pleasure": 0, "arousal": 0} for color in emotion_clusters}
+    unknown_keywords = []
+
+    if input_text:
+        words = input_text.lower().split()
+        for word in words:
+            cursor.execute("SELECT emotion, color, pleasure, arousal FROM connections WHERE keyword = ?", (word,))
+            row = cursor.fetchone()
+
+            if row:
+                color = row['color']
+                pleasure = row['pleasure']
+                arousal = row['arousal']
+
+                # Update activations
+                activations[color]['count'] += 1
+                activations[color]['pleasure'] += pleasure
+                activations[color]['arousal'] += arousal
+            else:
+                # Handle unknown keywords
+                unknown_keywords.append(word)
+                default_emotion = {
+                    "pleasure": 0.5,
+                    "arousal": 0.5,
+                    "color": "#808080",
+                    "emotion": "neutral"
+                }
+
+                # Add the unknown keyword to the database
+                cursor.execute("""
+                    INSERT INTO connections (keyword, emotion, color, pleasure, arousal) 
+                    VALUES (?, ?, ?, ?, ?)
+                """, (word, default_emotion["emotion"], default_emotion["color"], 
+                      default_emotion["pleasure"], default_emotion["arousal"]))
+                conn.commit()
+                logging.info(f"New keyword '{word}' added with default emotions.")
+
+    conn.close()
+
+    # Calculate activation weights
+    for color in activations:
+        if activations[color]['count'] > 0:
+            activations[color]['weight'] = emotion_clusters.get(color, {}).get('weight', 1) * activations[color]['count']
+
+    return activations, unknown_keywords
