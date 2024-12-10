@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maia's Learning Progress</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: #ffffff;
+            padding: 2em;
+        }
+        h1, h2 { color: #f5f5f5; }
+        #app { max-width: 900px; margin: 0 auto; }
+        .input-area {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1em;
+        }
+        input[type="text"], input[type="file"] {
+            background: #333;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 0.5em;
+            font-size: 1em;
+            border-radius: 5px;
+        }
+        button {
+            padding: 0.5em 1em;
+            font-size: 1em;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover { background-color: #0056b3; }
+        #response-box {
+            background: #222;
+            color: #fff;
+            padding: 1em;
+            border-radius: 5px;
+            min-height: 100px;
+            margin-left: 10px;
+            flex: 1;
+        }
+        #visualization { margin: 2em 0; height: 500px; }
+    </style>
+</head>
+<body>
+
+<div id="app">
+    <h1>Maia's Learning Journey</h1>
+
+    <div class="input-area">
+        <input type="text" id="inputText" placeholder="Enter text to influence Maia's learning...">
+        <input type="file" id="fileInput" accept="image/*">
+        <button id="analyzeButton">Analyze</button>
+        <div id="response-box">Awaiting response...</div>
+    </div>
+
+    <div id="visualization"></div>
+</div>
+
+<script>
+    let clusters = [];
+
+    // Activate Analyze Button on Click or Enter Key
+    document.addEventListener("DOMContentLoaded", () => {
+        const inputText = document.getElementById("inputText");
+        const analyzeButton = document.getElementById("analyzeButton");
+
+        // Left Click Activation
+        analyzeButton.addEventListener("click", () => {
+            analyzeText();
+        });
+
+        // Enter Key Activation
+        inputText.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                event.preventDefault();  // Prevent form submission
+                analyzeText();
+            }
+        });
+    });
+
+    function analyzeText() {
+        const text = document.getElementById("inputText").value;
+        const file = document.getElementById("fileInput").files[0];
+
+        if (text || file) {
+            let formData = new FormData();
+            formData.append('text', text);
+
+            if (file) formData.append('image', file);
+
+            $.ajax({
+                url: '/analyze',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function(response) {
+                    clusters = response.activations;
+                    updateVisualization();
+                    document.getElementById("response-box").textContent = response.text_response || "Analysis complete!";
+                },
+                error: function(error) {
+                    console.error('Error:', error);
+                    alert('An error occurred during analysis.');
+                }
+            });
+
+            // Reset input fields
+            document.getElementById('inputText').value = '';
+            document.getElementById('fileInput').value = ''; 
+        } else {
+            alert("Please provide input text or an image.");
+        }
+    }
+
+    function updateVisualization() {
+        const data = [{
+            x: Object.values(clusters).map(c => c.pleasure / (c.count || 1)),
+            y: Object.values(clusters).map(c => c.arousal / (c.count || 1)),
+            mode: 'markers',
+            type: 'scatter',
+            marker: {
+                size: Object.values(clusters).map(c => c.weight * 50),
+                color: Object.keys(clusters),
+                opacity: 0.8
+            },
+            text: Object.keys(clusters)
+        }];
+
+        const layout = {
+            title: 'Emotional States: Pleasure vs Arousal',
+            xaxis: { title: 'Pleasure' },
+            yaxis: { title: 'Arousal' },
+            paper_bgcolor: 'rgba(0,0,0,0)',
+            plot_bgcolor: 'rgba(0,0,0,0)',
+            font: { color: '#f5f5f5' }
+        };
+
+        Plotly.newPlot('visualization', data, layout);
+    }
+</script>
+
+</body>
+</html>
