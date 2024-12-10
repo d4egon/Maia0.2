@@ -9,7 +9,9 @@ from flask import Flask, request, jsonify, render_template
 # Backend Modules
 from backend.emotion_engine import analyze_emotion
 from backend.memory_persistence_engine import store_memory_in_neo4j, retrieve_memories_from_neo4j
+from backend.memory_persistence_engine import store_memory, retrieve_memories
 from backend.ethics_engine import evaluate_ethics
+
 
 # Initialize Flask App
 app = Flask(__name__)

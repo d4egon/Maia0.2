@@ -1,9 +1,9 @@
-# __init__.py - Initialize Backend Modules
-
+# __init__.py
 __all__ = [
     "emotion_engine",
-    "memory_persistence_engine",
     "ethics_engine",
+    "memory_persistence_engine",
+    "neo4j_connection",
     "reflexive_introspection",
     "sensory_system",
     "dream_engine",

@@ -2,7 +2,7 @@
 
 # Import SQLite and Neo4j
 import sqlite3
-from neo4j_connection import neo4j_db
+from backend.neo4j_connection import neo4j_db
 
 # Database Paths
 SQLITE_DB_PATH = "data/maia_emotion_db.db"
