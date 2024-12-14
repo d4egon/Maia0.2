@@ -1,0 +1,9 @@
+Flask
+neo4j
+tensorflow
+nltk
+psutil
+PyPDF2
+pytesseract
+ffmpeg-python
+pytest
