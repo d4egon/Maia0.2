@@ -1,103 +1,100 @@
-# main.py - Project Entry Point
+# Filename: main.py
 
-import os
+from config.settings import CONFIG
+from core.neo4j_connector import Neo4jConnector
+from core.memory_engine import MemoryEngine
+from NLP.response_generator import ResponseGenerator
+from NLP.nlp_engine import NLP
+from core.self_initiated_conversation import SelfInitiatedConversation
+
+import subprocess
+from threading import Thread
+
+from core.memory_linker import MemoryLinker
+
+from core.context_search import ContextSearchEngine
+
+# Initialize Context Search Engine
+context_search_engine = ContextSearchEngine(neo4j)
+
+# Enhance NLP Engine with Context Search
+nlp_engine.attach_context_search(context_search_engine)
+
+# Initialize Memory Linker
+memory_linker = MemoryLinker(neo4j)
+
+# Schedule Memory Linking every 5 minutes
 import time
-import webbrowser
-from subprocess import Popen
-from flask import Flask, request, jsonify, render_template
+from threading import Thread
 
-# Backend Modules
-from backend.emotion_engine import analyze_emotion
-from backend.memory_persistence_engine import store_memory, retrieve_memories
-from backend.ethics_engine import evaluate_moral_decision
+def scheduled_linking():
+    while True:
+        memory_linker.run_periodic_linking()
+        time.sleep(300)  # Every 5 minutes
 
+# Start Background Task
+linking_thread = Thread(target=scheduled_linking, daemon=True)
+linking_thread.start()
 
+def run_web_server():
+    subprocess.Popen(["python", "web_server/app.py"])
 
+# Launch Flask server in a background thread
+print("Launching upload service at http://127.0.0.1:5000 /n")
+web_thread = Thread(target=run_web_server)
+web_thread.start()
 
-# Initialize Flask App
-app = Flask(__name__)
+# Initialize Database Connection
+print("Connecting to Neo4j AuraDB...")
+neo4j = Neo4jConnector(CONFIG["NEO4J_URI"], CONFIG["NEO4J_USER"], CONFIG["NEO4J_PASS"])
 
-# --- Flask Routes ---
+# Initialize Core Modules
+memory_engine = MemoryEngine(neo4j)
+response_gen = ResponseGenerator(memory_engine, neo4j)
+nlp_engine = NLP(memory_engine, response_gen, neo4j)
+self_reflector = SelfInitiatedConversation(memory_engine, response_gen, neo4j)
 
-# Home Route
-@app.route("/")
-def home():
-    return render_template("index.html")
+# Database Cleanup
+memory_engine.cleanup_database()
+print("Database cleanup complete...")
 
+def main():
+    print("Welcome to Maia 0.2")
+    print("Type 'exit' anytime to quit.\n")
 
-# Store Memory Route
-@app.route("/store_memory", methods=["POST"])
-def store_memory():
-    data = request.json
-    event = data.get("event")
-    content = data.get("content")
-    emotion = data.get("emotion")
-    intensity = data.get("intensity", 1)
+    awaiting_feedback = False
+    last_memory_text = ""
 
-    result = store_memory_in_neo4j(event, content, emotion, intensity)
-    return jsonify({"message": "Memory stored!", "result": result})
+    while True:
+        # User Input
+        user_input = input("You: ").strip()
 
+        if user_input.lower() == "exit":
+            print("Goodbye! See you next time.")
+            break
 
-# Retrieve Memories Route
-@app.route("/retrieve_memories", methods=["GET"])
-def retrieve_memories():
-    emotion = request.args.get("emotion")
-    memories = retrieve_memories_from_neo4j(emotion)
-    return jsonify({"memories": memories})
+        # Handle Feedback
+        if awaiting_feedback:
+            if user_input.lower() in ["yes", "no"]:
+                adjustment = 1 if user_input.lower() == "yes" else -1
+                memory_engine.adjust_memory_weight(last_memory_text, adjustment)
+                print("Maia: Thank you! I've updated my understanding.")
+                awaiting_feedback = False
+                continue
 
+        # Process the input and generate response
+        response = nlp_engine.process(user_input)
+        print(f"Maia: {response}")
 
-# Chat Route
-@app.route("/chat", methods=["POST"])
-def chat():
-    user_message = request.json.get("message", "")
-    response = analyze_emotion(user_message)
-    store_memory_in_neo4j("user_interaction", user_message, response["emotion"], response["intensity"])
-    return jsonify({"reply": response["response_text"]})
+        # Check for feedback request in the response
+        if "Was my interpretation accurate?" in response:
+            awaiting_feedback = True
+            last_memory_text = user_input
 
+        # Trigger Self-Reflection
+        reflection = self_reflector.generate_unprompted_message()
+        if reflection:
+            print(f"\n[Maia Thinking...]: {reflection}\n")
 
-# Analyze Route (Text + Image Analysis)
-@app.route("/analyze", methods=["POST"])
-def analyze():
-    user_input = request.form.get("text", "").strip()
-    image = request.files.get("image")
-    activations, unknown_keywords = analyze_emotion(user_input, image)
-    return jsonify({
-        "activations": activations,
-        "text_response": f"Analysis Complete! Emotional state: {activations}",
-        "unknown_keywords": unknown_keywords,
-    })
-
-
-# Ethical Evaluation Route
-@app.route("/ethics", methods=["POST"])
-def ethics():
-    scenario = request.json.get("scenario", "")
-    decision = evaluate_ethics(scenario)
-    return jsonify({"evaluation": decision})
-
-
-# --- Auto-Start System ---
-def start_services():
-    try:
-        # Start Neo4j Server
-        print("Starting Neo4j server...")
-        Popen(["neo4j", "console"], shell=True)
-
-        # Wait for Neo4j Initialization
-        time.sleep(10)
-
-        # Open the Default Web Browser
-        webbrowser.open("http://127.0.0.1:5000")
-        print("Launching browser at http://127.0.0.1:5000")
-
-        # Start Flask App
-        print("Starting Flask API...")
-        app.run(debug=True, host="0.0.0.0", port=5000)
-
-    except Exception as e:
-        print(f"Error starting services: {e}")
-
-
-# --- Main Entry ---
 if __name__ == "__main__":
-    start_services()
+    main()
