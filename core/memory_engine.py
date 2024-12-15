@@ -129,4 +129,4 @@ class MemoryEngine:
             self.db.run_query(query, {"text": text.lower(), "adjustment": adjustment})
             logger.info(f"[WEIGHT ADJUSTED] '{text}' adjusted by {adjustment}")
         except Exception as e:
-            logger.error(f"[ADJUST FAILED] Weight adjustment failed: {e}", exc_info=True)''
+            logger.error(f"[ADJUST FAILED] Weight adjustment failed: {e}", exc_info=True)

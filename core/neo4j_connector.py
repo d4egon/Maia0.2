@@ -1,6 +1,6 @@
 # Filename: /core/neo4j_connector.py
 
-from neo4j import GraphDatabase, TransactionError
+from neo4j import GraphDatabase
 import logging
 
 # Initialize logging
@@ -25,7 +25,7 @@ class Neo4jConnector:
                 data = result.data()
                 logger.debug(f"[QUERY SUCCESS] {query} | Data: {data}")
                 return data
-        except TransactionError as e:
+        except Exception as e:
             logger.error(f"[QUERY FAILED] {e}", exc_info=True)
             return []
 

@@ -1,0 +1,59 @@
+<!-- Filename: /web_server/templates/index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MAIA - File Processor</title>
+</head>
+<body>
+    <div class="upload-container">
+        <h1>Welcome to MAIA File Processor</h1>
+        <form id="upload-form">
+            <input type="file" name="file" id="file" required>
+            <button type="submit">Upload</button>
+        </form>
+
+        <div id="response" class="response-container"></div>
+        <div id="thought-bubble" class="thought-bubble">Analyzing the file...</div>
+    </div>
+
+    <div class="query-container">
+        <h2>Ask MAIA</h2>
+        <input type="text" id="question" placeholder="Ask MAIA a question...">
+        <button onclick="askMaia()">Ask</button>
+        <div id="maia-response" class="thought-bubble" style="display: none;"></div>
+    </div>
+
+    <script>
+        async function askMaia() {
+            const question = document.getElementById("question").value;
+            if (!question) {
+                alert("Please enter a question!");
+                return;
+            }
+
+            try {
+                const response = await fetch("/ask_maia", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question }),
+                });
+
+                const result = await response.json();
+                const responseBubble = document.getElementById("maia-response");
+                if (response.ok) {
+                    responseBubble.textContent = result.response;
+                    responseBubble.style.display = "block";
+                } else {
+                    responseBubble.textContent = "Error: " + result.message;
+                    responseBubble.style.display = "block";
+                }
+            } catch (error) {
+                console.error("Error:", error);
+            }
+        }
+    </script>
+</body>
+</html>
