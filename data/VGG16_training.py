@@ -1,3 +1,5 @@
+# Filename: /VGG16_training.py
+
 import tensorflow as tf
 from tensorflow.keras.applications import VGG16
 from tensorflow.keras.models import Model
@@ -47,7 +49,7 @@ train_datagen = ImageDataGenerator(
 
 # Replace 'path_to_dataset' with your dataset path
 train_generator = train_datagen.flow_from_directory(
-    'C:/Maia/dataset/',
+    'dataset/',
     target_size=(224, 224),
     batch_size=32,
     class_mode='categorical',
@@ -55,7 +57,7 @@ train_generator = train_datagen.flow_from_directory(
 )
 
 validation_generator = train_datagen.flow_from_directory(
-    'C:/Maia/dataset/',
+    'dataset/',
     target_size=(224, 224),
     batch_size=32,
     class_mode='categorical',

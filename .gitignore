@@ -5,6 +5,9 @@
 __pycache__/
 *.log
 
+# Ignore environment variables
+.env
+
 # Virtual environment
 venv/
 env/
@@ -37,3 +40,4 @@ dist/
 # Local Neo4j database files
 data/
 logs/
+/dataset/test

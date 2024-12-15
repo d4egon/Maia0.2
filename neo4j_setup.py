@@ -1,66 +1,35 @@
-# neo4j_setup.py - Improved Database Setup for Neo4j
+# Filename: /neo4j_setup.py
 
-from backend.neo4j_connection import Neo4jConnection
+from core.neo4j_connector import Neo4jConnector
 
 # Initialize Neo4j
-db = Neo4jConnection(
-    uri="neo4j+s://46dc0ffd.databases.neo4j.io:7687",
-    user="neo4j",
-    password="4KjyYMe6ovQnU9QaRDnwP1q85Ok_rtB9l5p2yiWLgh8"
-)
+neo4j = Neo4jConnector("neo4j+s://46dc0ffd.databases.neo4j.io:7687", "neo4j", "YOUR_PASSWORD")
 
-# Corrected Constraints Setup
-setup_queries = [
-    """
-    CREATE CONSTRAINT IF NOT EXISTS FOR (e:Emotion)
-    REQUIRE e.name IS UNIQUE
-    """,
-    """
-    CREATE CONSTRAINT IF NOT EXISTS FOR (m:Memory)
-    REQUIRE m.event IS UNIQUE
-    """,
-    """
-    CREATE CONSTRAINT IF NOT EXISTS FOR (j:JournalEntry)
-    REQUIRE j.title IS UNIQUE
-    """
-]
+# Define Triggers
+memory_linking_trigger = """
+MATCH (m:Memory)
+WHERE NOT (m)-[:RELATED_TO]->()
+WITH m
+MATCH (other:Memory)
+WHERE m.text <> other.text
+AND algo.similarity.cosine(m.vector, other.vector) > 0.7
+MERGE (m)-[r:RELATED_TO]->(other)
+SET r.weight = coalesce(r.weight, 0) + 1
+"""
 
-# Define Data Initialization Queries
-label_creation_queries = [
-    """
-    MERGE (j:JournalEntry {title: "Initial Journal Entry"})
-    ON CREATE SET j.content = "Maia's journal system initialized.",
-                  j.emotional_state = "neutral",
-                  j.timestamp = datetime()
-    """,
-    """
-    MERGE (e:Emotion {name: "neutral"})
-    ON CREATE SET e.intensity = 0.5, e.context = "system initialization"
-    """,
-    """
-    MERGE (e:Emotion {name: "happy"})
-    ON CREATE SET e.intensity = 0.8, e.context = "positive interaction"
-    """,
-    """
-    MERGE (e:Emotion {name: "agreement"})
-    ON CREATE SET e.intensity = 1.0, e.context = "affirmation"
-    """,
-    """
-    MERGE (e:Emotion {name: "disagreement"})
-    ON CREATE SET e.intensity = 1.0, e.context = "negation"
-    """
-]
+emotional_update_trigger = """
+MATCH (m:Memory)-[:HAS_EMOTION]->(e:Emotion)
+WHERE e.intensity <> m.emotional_state
+SET e.intensity = m.emotional_state
+"""
 
-# Execute Setup Queries
-try:
-    for query in setup_queries:
-        db.query(query)
-    print("Database constraints created successfully.")
+# Create Triggers
+neo4j.create_trigger("LinkMemoriesOnCreate", memory_linking_trigger)
+neo4j.create_trigger("UpdateEmotionState", emotional_update_trigger)
 
-    for query in label_creation_queries:
-        db.query(query)
-    print("Database setup complete. All initial labels created.")
-except Exception as e:
-    print(f"Error occurred: {e}")
+# Verify Triggers
+active_triggers = neo4j.list_triggers()
+for trigger in active_triggers:
+    print(f"Active Trigger: {trigger['name']}")
 
-db.close()
+neo4j.close()

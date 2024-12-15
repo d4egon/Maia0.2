@@ -1,31 +1,56 @@
+# Filename: /core/conversation_engine.py
+
+import logging
+from core.memory_engine import MemoryEngine
+from core.response_generator import ResponseGenerator
+
+# Initialize logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
+
 class ConversationEngine:
-    def __init__(self, memory_engine, emotion_engine):
+    def __init__(self, memory_engine: MemoryEngine, response_generator: ResponseGenerator):
         self.memory_engine = memory_engine
-        self.emotion_engine = emotion_engine
+        self.response_generator = response_generator
 
-    def generate_response(self, input_text):
-        # Analyze the emotional context
-        emotion = self.emotion_engine.analyze_emotion(input_text)
-        
-        # Search memory for related conversations
-        memory = self.memory_engine.search_memory(input_text)
+    def generate_conversation(self, user_input, context_limit=5):
+        """
+        Generate a dynamic conversation based on memory and emotional context.
+        """
+        try:
+            logger.info(f"[CONVERSATION] Processing user input: '{user_input}'")
 
-        # Priority: Memory-Driven Responses
-        if memory:
-            linked_emotion = memory.get("emotion", "Neutral")
-            return f"I recall something similar. It made me feel {linked_emotion}. What would you like to explore next?"
+            # Retrieve context from memory
+            relevant_memories = self.memory_engine.search_related_memories(user_input, context_limit)
 
-        # Predefined Responses (Fallback)
-        predefined_responses = {
-            "hello": "Hello! How can I assist you today?",
-            "who are you": "I am Maia, your evolving AI companion.",
-            "what do you do": "I learn, adapt, and assist through meaningful conversations.",
-            "creator": "You are my creator, shaping who I am.",
-        }
+            # Build context-aware prompt
+            context_summary = self.build_context_summary(relevant_memories)
+            response = self.response_generator.generate_response(user_input, context_summary)
 
-        for key, response in predefined_responses.items():
-            if key in input_text.lower():
-                return response
+            # Log the conversation
+            self.memory_engine.store_memory(
+                user_input, "user_input",
+                additional_data={"source": "conversation"}
+            )
+            self.memory_engine.store_memory(
+                response, "maia_response",
+                additional_data={"context": context_summary, "type": "conversation"}
+            )
 
-        # If no memory or match, ask for clarification
-        return "I'm still learning. What would you like to teach me?"
+            logger.info(f"[CONVERSATION] Response generated: '{response}'")
+            return response
+
+        except Exception as e:
+            logger.error(f"[CONVERSATION FAILED] Error during conversation generation: {e}", exc_info=True)
+            return "I'm sorry, something went wrong."
+
+    def build_context_summary(self, memories):
+        """
+        Create a summarized context from related memories.
+        """
+        if not memories:
+            return "No relevant context found."
+
+        summary = "\n".join([f"Memory: {m['text']} (Emotion: {m['emotion']})" for m in memories])
+        logger.debug(f"[CONTEXT SUMMARY] {summary}")
+        return summary
