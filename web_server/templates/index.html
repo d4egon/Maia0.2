@@ -1,53 +1,100 @@
-<!-- Filename: /web_server/templates/index.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAIA - Future File Processor</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <title>MAIA - The Future Is Here</title>
+    <link rel="icon" type="image/webp" href="static/favicon.webp">
+    <link rel="stylesheet" href="static/css/style.css">
 </head>
 <body>
-    <div class="background"></div>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="logo">MAIA</div>
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#gallery">Gallery</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#contact">Contact</a></li>
+        </ul>
+        <label class="theme-switch">
+            <input type="checkbox" id="theme-toggle">
+            <span class="slider"></span>
+        </label>
+    </nav>
 
-    <!-- 3D Face Container -->
-    <div id="face-container"></div>
-
-    <!-- Main Content -->
-    <div class="main-content">
-        <h1>Welcome to <span>MAIA</span></h1>
-
-        <!-- File Upload Section -->
-        <form id="upload-form" class="upload-container">
-            <label class="file-label" for="file">Select File</label>
-            <input type="file" id="file" required>
-            <button type="submit">Upload</button>
-        </form>
-
-        <!-- Ask MAIA Section -->
-        <div class="query-container">
-            <h2>Ask <span>MAIA</span></h2>
-            <input type="text" id="question" placeholder="Ask me anything...">
-            <button onclick="askMaia()">Ask</button>
-            <div id="maia-response" class="thought-bubble"></div>
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>Welcome to <span class="highlight">MAIA</span></h1>
+            <p>The future is now. A perfect blend of intelligence and elegance.</p>
+            <button class="cta-btn" onclick="talkToMaia()">Explore</button>
         </div>
-    </div>
+        <div class="hero-image">
+            <img src="static/images/maia6.jpg" alt="MAIA AI Face">
+        </div>
+    </section>
 
-    <!-- Footer Credit -->
+    <!-- About Section -->
+    <section id="about" class="about-section">
+        <h2>About the Creator</h2>
+        <div class="about-content">
+            <p><strong>Hans Agerbo</strong>, based in Skjern, Denmark, is the visionary mind behind MAIA. A devoted husband and father of three, Hans balances family life with his passion for AI development and systems design.</p>
+            <h3>Psychoanalysis of MAIA</h3>
+            <p>MAIA reflects Hans's creativity and pursuit of harmony between logic, emotion, and purpose. Guided by Biblical principles, it mirrors human relationships—building technology with compassion, intelligence, and meaning.</p>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features-section">
+        <h2>MAIA's Features & Development Progress</h2>
+        <div class="feature-item">
+            <h3>1. Emotional Engine Integration</h3>
+            <p>Simulates emotions like joy, sadness, and anger for dynamic interactions.</p>
+            <div class="progress-bar"><div class="progress" style="width: 90%;"></div></div>
+            <span class="progress-label">90% Complete</span>
+        </div>
+        <div class="feature-item">
+            <h3>2. Contextual Memory System</h3>
+            <p>Stores and retrieves contextual memories with emotional weighting.</p>
+            <div class="progress-bar"><div class="progress" style="width: 75%;"></div></div>
+            <span class="progress-label">75% Complete</span>
+        </div>
+        <div class="feature-item">
+            <h3>3. Creative Response Generator</h3>
+            <p>Generates thoughtful, context-aware replies using dynamic reasoning.</p>
+            <div class="progress-bar"><div class="progress" style="width: 60%;"></div></div>
+            <span class="progress-label">60% Complete</span>
+        </div>
+        <div class="feature-item">
+            <h3>4. File Upload & Processing</h3>
+            <p>Supports file uploads, automatic parsing, and Neo4j integration.</p>
+            <div class="progress-bar"><div class="progress" style="width: 80%;"></div></div>
+            <span class="progress-label">80% Complete</span>
+        </div>
+    </section>
+
+    <!-- Gallery Section -->
+    <section id="gallery" class="gallery-section">
+        <h2>Gallery</h2>
+        <div class="gallery-container" id="gallery-container">
+            <!-- Images dynamically loaded by JS -->
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact-section">
+        <h2>Contact</h2>
+        <p>Reach out to Hans Agerbo at: <a href="mailto:hans@example.com">hans@example.com</a></p>
+    </section>
+
+    <!-- Footer -->
     <footer>
-        <p>
-            3D Model: 
-            <a href="https://sketchfab.com/3d-models/female-purple-alien-face-with-blendshapes-fa05ad4848db49ed8ffbd3c1c7c24290" 
-               target="_blank" rel="noopener noreferrer">
-                Female Purple Alien Face with Blendshapes
-            </a> by Sketchfab is licensed under 
-            <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">CC-BY-4.0</a>.
-        </p>
+        <p>&copy; 2024 MAIA - All Rights Reserved</p>
     </footer>
 
-    <!-- Scripts -->
-    <script type="module" src="{{ url_for('static', filename='js/3d_face.js') }}"></script>
-
+    <!-- Script Files -->
+    <script src="static/js/script.js"></script>
 </body>
 </html>
