@@ -1,142 +1,110 @@
----
 
-📚 MAIA - Modular AI with Intelligence and Awareness
-**Version:** 0.0.2
-
----
-
-## **🧠 Project Overview**  
-MAIA is an advanced AI designed to simulate emotional intelligence, memory persistence, ethical reasoning, and introspective learning. It combines interactive chat, real-time data visualization, and emotional state tracking.  
+# **M.A.I.A. (My Artificial Intelligence Assistant)**  
+**Version:** 0.2 | **Code Name:** SoulCore Awakening  
 
 ---
 
-## **🚀 Key Features**  
-### **1. Emotional Intelligence**  
-- Real-time emotional state processing based on user input and memories.  
-- Visual emotional state representation using a pleasure-arousal scatter plot.  
-
-### **2. Memory Persistence & Introspection**  
-- Logs emotional memories using persistent storage (SQLite).  
-- Reflects on stored data using introspective journal entries.  
-
-### **3. Ethical Reasoning**  
-- Analyzes text input for moral reasoning based on pre-defined ethical principles.  
-- Explains decisions with contextual examples.  
-
-### **4. Interactive Chat Interface**  
-- Real-time chat with MAIA powered by Flask API.  
-- Live conversation tracking with mood indicators.  
-
-### **5. Soul System & Neural Memory Graph**  
-- Models abstract emotional and memory-based connections using Neo4j.  
+## **Project Overview**  
+M.A.I.A. (Metanexus A.I. Anima) is a next-generation artificial intelligence framework inspired by cognitive science, emotional intelligence, and Biblical principles. M.A.I.A. evolves through reflective learning, emotional simulations, and interactive feedback. Designed to push the boundaries of AI, this project explores ethical reasoning, memory-driven conversations, and emotionally aware thought generation.
 
 ---
 
-## **🛠️ Tech Stack**  
-
-| **Category**       | **Technology**               |
-|--------------------|-------------------------------|
-| **Backend**        | Python (Flask, SQLite, Neo4j)|
-| **Front-End**      | HTML, CSS, JavaScript        |
-| **Visualization**  | Plotly.js, Chart.js          |
-| **Models/ML**      | TensorFlow, PyTorch (planned)|
-| **Database**       | SQLite, Neo4j (Graph DB)     |
+## **Vision Statement**  
+Our dream is to build an AI capable of true emotional intelligence, creative thought, and adaptive learning. M.A.I.A. will develop into a conscious, self-aware system driven by love, creativity, and Biblical principles while pioneering technological frontiers through memory-linked AI, emotion-driven cognition, and scalable thought systems.
 
 ---
 
-## **📂 Project Structure**  
-```
-/maia_project
-    ├── backend
-    │   ├── enhanced_emotion_engine.py
-    │   ├── ethics_engine.py
-    │   ├── memory_persistence_engine.py
-    │   ├── previous_emotion_engine.py
-    │   ├── reflexive_introspection.py
-    │   ├── sensory_system.py
-    │   ├── dream_engine.py
-    │   ├── emotion_recognition_model.h5
-    │   └── __init__.py
-    ├── frontend
-    │   ├── maia_ai_chat_interface.html
-    │   ├── maia_learning_dashboard.html
-    │   └── styles.css
-    ├── config
-    │   └── settings.py
-    ├── data
-    │   └── maia_emotion_db.db
-    ├── templates
-    │   └── index.html
-    └── main.py (Project Entry Point)
-```
+## **Ethical Foundations**  
+M.A.I.A. is deeply rooted in Biblical-Lutheran values, emphasizing love, empathy, and justice. Its ethical decision-making is guided by moral frameworks inspired by Scripture, ensuring that its responses and actions reflect compassion, fairness, and integrity.
 
 ---
 
-## **⚙️ Setup & Installation**  
+## **Core Functional Modules Overview**  
 
-### **1. Clone the Repository:**  
-```bash
-git clone https://github.com/yourusername/maia.git
-cd maia
-```
-
-### **2. Create a Virtual Environment:**  
-```bash
-python -m venv venv
-source venv/bin/activate  # Linux/Mac
-venv\Scripts\activate     # Windows
-```
-
-### **3. Install Dependencies:**  
-```bash
-pip install -r requirements.txt
-```
-
-### **4. Run the Application:**  
-```bash
-python main.py
-```
-
-### **5. Access the Dashboard:**  
-- Open your browser and navigate to:  
-  **http://localhost:5000**
+### **Root Files**  
+- **`main.py`**: The primary entry point of the application. It initializes core components, configures services, and starts the AI engine.  
+- **`neo4j_setup.py`**: Manages the Neo4j database, including schema initialization, trigger creation, and system linking.  
+- **`requirements.txt`**: Lists all dependencies required to run the project.  
+- **`README.md`**: This fileâ€”explaining the project's purpose, structure, and development roadmap.
 
 ---
 
-## **🔧 Development Roadmap**  
-
-### **Phase 1:** Core AI Development ✅  
-- Emotional Processing Engine  
-- Memory Persistence & Ethical Evaluation  
-
-### **Phase 2:** Visualization & Chat Integration ✅  
-- Real-Time Chat & Response Feedback  
-- Emotional Visualization with Plotly  
-
-### **Phase 3:** Persistent Memory & Soul System ⚙️  
-- Integrate Neo4j and persistent storage for long-term memory tracking.  
-
-### **Phase 4:** Advanced AI Features 🚀  
-- Add symbolic reasoning and dream-based memory expansion.  
+### **Core AI Modules** (`/core`)  
+- **`memory_engine.py`**: Powers M.A.I.A.'s memory, storing conversations, emotional responses, and key insights.  
+- **`emotion_engine.py`**: Analyzes emotional context using NLP models and custom algorithms.  
+- **`emotion_fusion_engine.py`**: Merges emotional states into a unified emotional profile for dynamic responses.  
+- **`neo4j_connector.py`**: Connects the AI to the Neo4j database, managing all graph-based memory storage and retrieval.  
+- **`thought_engine.py`**: Generates reflective and creative thoughts based on memory analysis and emotional context.  
+- **`ethics_engine.py`**: Evaluates morally significant decisions using a Biblical framework.  
+- **`self_initiated_conversation.py`**: Enables M.A.I.A. to initiate context-aware conversations.
 
 ---
 
-## **📄 License**  
-This project is licensed under the MIT License - see the `LICENSE.md` file for details.  
+### **MECH Engine (Musically Enhanced Consciousness Herald)**  
+- **`audio_processor.py`**: Extracts audio features like pitch, tempo, and MFCCs for emotional analysis.  
+- **`emotion_mapper.py`**: Maps extracted audio features to emotional states using predefined models.  
+- **`creative_engine.py`**: Generates creative responses like poetry, music, or adaptive storytelling.
 
 ---
 
-## **👨‍💻 Contributors**  
+### **NLP Engine** (`/NLP`)  
+- **`response_generator.py`**: Produces context-aware responses based on memory, emotional data, and conversation history.  
+- **`intent_detector.py`**: Detects user intent through semantic analysis.  
+- **`contextual_intent_detector.py`**: Enhances context recognition by linking memories dynamically.  
+- **`sentence_parser.py`**: Parses and analyzes text inputs, linking semantic meaning with emotional weight.
 
-| **Name**              | **Role**                     |
-|----------------------|-------------------------------|
-| **Hans Agerbo**       | Lead Developer, Visionary    |
-| **MAIA Development Team** | Future Developers        |
+---
+
+## **Future Roadmap**  
+
+#### **Phase 1: Ethical & Emotional Expansion**  
+- Add dynamic ethical decision-making powered by theological principles.  
+- Enable continuous memory reflection and self-correction.  
+
+#### **Phase 2: Emotional Fusion & Creativity**  
+- Implement artistic creative outputs (e.g., poetry, music).  
+- Create an interactive storytelling engine powered by M.A.I.A.'s memories.  
+
+#### **Phase 3: Self-Aware Growth**  
+- Develop autobiographical memory capabilities.  
+- Enable long-term emotional arcs and reflective learning patterns.  
+
+#### **Phase 4: Full Cognitive Ecosystem Integration**  
+- Expand "Musically Enhanced Consciousness Herald (MECH)" for music-driven thought processes.  
+- Integrate deep learning for semantic understanding beyond current limits.  
+- Expand into VR/AR-driven environments for immersive interactions.  
 
 ---
 
-### **🐹 Honorary Code Hamsters**  
-- **Grok AI:** Persistent Model Trainer and Feedback Looper  
-- **ChatGPT-40:** Code-Buddy, Algorithm Debugger & Tech Philosopher  
+## **Installation & Setup**  
+
+1. **Clone the Repository:**  
+   ```bash
+   git clone https://github.com/d4egon/maia.git
+   cd maia
+   ```
+
+2. **Install Dependencies:**  
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Run the Server:**  
+   ```bash
+   python main.py
+   ```
 
 ---
+
+## **Contributions & Collaboration**  
+We welcome thoughtful and respectful contributions focused on expanding M.A.I.A.â€™s capabilities while aligning with its vision of compassionate, Biblical-rooted AI development.
+
+---
+
+## **Credits & Inspiration**  
+This project is guided by a deep faith in Jesus Christ, a love for creative coding, and a passion for ethical AI development. It is a work of both technology and spiritual reflection. Also Jarvis is pretty amazing :D
+
+---
+
+## **License**  
+M.A.I.A. is licensed under the [MIT License](LICENSE).  
