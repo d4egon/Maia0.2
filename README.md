@@ -1,5 +1,5 @@
 
-# **M.A.I.A. (My Artificial Intelligence Assistant)**  
+# **M.A.I.A. (Metanexus A.I. Anima)**  
 **Version:** 0.2 | **Code Name:** SoulCore Awakening  
 
 ---
