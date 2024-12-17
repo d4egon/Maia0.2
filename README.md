@@ -97,7 +97,7 @@ M.A.I.A. is deeply rooted in Biblical-Lutheran values, emphasizing love, empathy
 ---
 
 ## **Contributions & Collaboration**  
-We welcome thoughtful and respectful contributions focused on expanding M.A.I.A.â€™s capabilities while aligning with its vision of compassionate, Biblical-rooted AI development.
+We welcome thoughtful and respectful contributions focused on expanding M.A.I.A.â€™s capabilities while aligning with its vision of compassionate, Biblical-rooted AI development, and ofcourse also various aspects of the philosophical world.
 
 ---
 
@@ -107,4 +107,5 @@ This project is guided by a deep faith in Jesus Christ, a love for creative codi
 ---
 
 ## **License**  
-M.A.I.A. is licensed under the [MIT License](LICENSE).  
+M.A.I.A. is licensed under the [GPL-3.0] GNU public license(LICENSE).
+It is free. Free to use and Free of charge for end users. Non-commercial. Ive no interest in money.  
