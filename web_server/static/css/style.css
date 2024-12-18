@@ -1,4 +1,8 @@
-/* General Styles */
+/* Reset and Global Styles */
+* {
+    box-sizing: border-box;
+}
+
 body {
     margin: 0;
     font-family: Arial, sans-serif;
@@ -15,27 +19,6 @@ a {
 h1, h2, h3, p {
     margin: 0.5em 0;
     text-align: center;
-}
-
-/* Light Theme */
-body.light-theme {
-    background: #bdbfbf;
-    color: #333;
-}
-
-body.light-theme .navbar,
-body.light-theme footer {
-    background: #ddd;
-    color: #333;
-}
-
-body.light-theme .nav-links a:hover {
-    color: #00d8ff;
-}
-
-body.light-theme .cta-btn {
-    background: #333;
-    color: #bdbfbf;
 }
 
 /* Navbar */
@@ -102,18 +85,6 @@ body.light-theme .cta-btn {
 .cta-btn:hover {
     background: #007bb5;
     transform: scale(1.05);
-}
-
-.hero-image img {
-    max-width: 300px;
-    border-radius: 50%;
-    box-shadow: 0 0 20px #00d8ff;
-    cursor: pointer;
-    transition: transform 0.3s ease;
-}
-
-.hero-image img:hover {
-    transform: scale(1.1);
 }
 
 /* Footer */
@@ -185,77 +156,119 @@ footer {
     color: #00d8ff;
 }
 
-/* Features Section */
+/* Features Section Spacing */
 .features-section {
     padding: 2em;
-    background: #f4f4f4;
-    color: #333;
+    margin-top: 3em; /* Add spacing to push it further down */
+    background: #1a1e26;
+    color: #f4f4f4;
     text-align: center;
-}
-
-.features-section h2 {
-    font-size: 2em;
-    margin-bottom: 1em;
+    transition: background 0.3s ease, color 0.3s ease;
 }
 
 .feature-item {
-    margin: 1em 0;
+    margin: 1.5em auto; /* Add vertical spacing between boxes */
     padding: 1em;
-    background: #fff;
+    background: #23252b;
     border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    max-width: 800px;
+    transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
 }
 
-.feature-item h3 {
-    margin: 0.5em 0;
+.feature-item:hover {
+    transform: translateY(5px); /* Subtle hover effect to lift the box */
 }
 
-.progress-bar {
-    width: 100%;
-    background: #ddd;
-    border-radius: 5px;
-    overflow: hidden;
-    margin: 0.5em 0;
+
+/* Big Image (Shrinked by 20%) */
+.hero-image img {
+    max-width: 240px; /* Adjust size to shrink it by 20% */
+    border-radius: 50%;
+    box-shadow: 0 0 20px #00d8ff;
+    cursor: pointer;
+    transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
-.progress {
-    height: 1em;
-    background: #4caf50;
+.hero-image img.hidden {
+    opacity: 0; /* Make it invisible */
+    pointer-events: none; /* Prevent interaction */
 }
 
-.progress-label {
-    font-weight: bold;
-    color: #555;
-}
-
-/* MAIA Chat Response */
-.maia-response {
+/* Chat Popup */
+.maia-chat-popup {
     position: fixed;
-    bottom: 15%;
-    right: 20%;
-    background: #00d8ff;
-    color: #1a1e26;
-    padding: 1em 1.5em;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    animation: fadeInOut 5s ease forwards;
+    bottom: 20px;
+    right: 20px;
+    width: 300px;
+    background: #23252b;
+    color: #f4f4f4;
+    border: 1px solid #444;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    font-family: Arial, sans-serif;
 }
 
-@keyframes fadeInOut {
-    0% {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-    20% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    80% {
-        opacity: 1;
-        transform: translateY(0);
-    }
-    100% {
-        opacity: 0;
-        transform: translateY(-20px);
-    }
+.maia-chat-header {
+    background: #333;
+    color: #00d8ff;
+    padding: 0.5em;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 8px 8px 0 0;
+}
+
+.maia-chat-log {
+    height: 200px;
+    overflow-y: auto;
+    padding: 1em;
+    font-size: 0.9em;
+    background: #1a1e26;
+    color: #f4f4f4;
+}
+
+.maia-chat-input {
+    display: flex;
+    border-top: 1px solid #444;
+}
+
+.maia-chat-input input {
+    flex: 1;
+    border: none;
+    padding: 0.5em;
+    font-size: 1em;
+    background: #2b2e35;
+    color: #f4f4f4;
+    border-radius: 0 0 0 8px;
+    outline: none;
+}
+
+.maia-chat-input button {
+    border: none;
+    padding: 0.5em 1em;
+    background: #00d8ff;
+    color: #23252b;
+    font-weight: bold;
+    border-radius: 0 0 8px 0;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.maia-chat-input button:hover {
+    background: #007bb5;
+}
+
+.user-message, .maia-message {
+    margin: 0.5em 0;
+}
+
+.user-message {
+    color: #00d8ff;
+}
+
+.maia-message {
+    color: #f4f4f4;
 }

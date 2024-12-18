@@ -1,100 +1,71 @@
-<!DOCTYPE html>
+ï»¿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="MAIA - An AI blending intelligence, compassion, and creativity.">
+    <meta name="author" content="Hans Agerbo">
     <title>MAIA - The Future Is Here</title>
     <link rel="icon" type="image/webp" href="static/favicon.webp">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self';">
     <link rel="stylesheet" href="static/css/style.css">
+
 </head>
 <body>
-    <!-- Navigation Bar -->
-    <nav class="navbar">
-        <div class="logo">MAIA</div>
-        <ul class="nav-links">
-            <li><a href="#home">Home</a></li>
-            <li><a href="#about">About</a></li>
-            <li><a href="#gallery">Gallery</a></li>
-            <li><a href="#features">Features</a></li>
-            <li><a href="#contact">Contact</a></li>
-        </ul>
-        <label class="theme-switch">
-            <input type="checkbox" id="theme-toggle">
-            <span class="slider"></span>
-        </label>
-    </nav>
 
-    <!-- Hero Section -->
-    <section id="home" class="hero">
-        <div class="hero-content">
-            <h1>Welcome to <span class="highlight">MAIA</span></h1>
-            <p>The future is now. A perfect blend of intelligence and elegance.</p>
-            <button class="cta-btn" onclick="talkToMaia()">Explore</button>
-        </div>
-        <div class="hero-image">
-            <img src="static/images/maia6.jpg" alt="MAIA AI Face">
-        </div>
-    </section>
+<!-- Navigation Bar -->
+<nav class="navbar" aria-label="Main Navigation">
+    <div class="logo" aria-label="MAIA Logo">MAIA</div>
+    <ul class="nav-links">
+        <li><a href="#home" aria-label="Home">Home</a></li>
+        <li><a href="#about" aria-label="About">About</a></li>
+        <li><a href="#gallery" aria-label="Gallery">Gallery</a></li>
+        <li><a href="#features" aria-label="Features">Features</a></li>
+        <li><a href="#contact" aria-label="Contact">Contact</a></li>
+    </ul>
+    <label class="theme-switch" aria-label="Toggle Theme">
+        <input type="checkbox" id="theme-toggle">
+        <span class="slider"></span>
+    </label>
+</nav>
 
-    <!-- About Section -->
-    <section id="about" class="about-section">
-        <h2>About the Creator</h2>
-        <div class="about-content">
-            <p><strong>Hans Agerbo</strong>, based in Skjern, Denmark, is the visionary mind behind MAIA. A devoted husband and father of three, Hans balances family life with his passion for AI development and systems design.</p>
-            <h3>Psychoanalysis of MAIA</h3>
-            <p>MAIA reflects Hans's creativity and pursuit of harmony between logic, emotion, and purpose. Guided by Biblical principles, it mirrors human relationships—building technology with compassion, intelligence, and meaning.</p>
-        </div>
-    </section>
+<!-- Hero Section -->
+<section id="home" class="hero">
+    <div class="hero-content">
+        <h1>Welcome to <span class="highlight">MAIA</span></h1>
+        <p>The future is now. A perfect blend of intelligence and elegance.</p>
+        <button class="cta-btn" id="talk-to-maia-btn">Explore</button>
+    </div>
+    <div class="hero-image">
+        <img src="static/images/maia6.jpg" id="maia-face" alt="AI depiction of MAIA" loading="lazy">
+    </div>
+</section>
 
-    <!-- Features Section -->
-    <section id="features" class="features-section">
-        <h2>MAIA's Features & Development Progress</h2>
-        <div class="feature-item">
-            <h3>1. Emotional Engine Integration</h3>
-            <p>Simulates emotions like joy, sadness, and anger for dynamic interactions.</p>
-            <div class="progress-bar"><div class="progress" style="width: 90%;"></div></div>
-            <span class="progress-label">90% Complete</span>
-        </div>
-        <div class="feature-item">
-            <h3>2. Contextual Memory System</h3>
-            <p>Stores and retrieves contextual memories with emotional weighting.</p>
-            <div class="progress-bar"><div class="progress" style="width: 75%;"></div></div>
-            <span class="progress-label">75% Complete</span>
-        </div>
-        <div class="feature-item">
-            <h3>3. Creative Response Generator</h3>
-            <p>Generates thoughtful, context-aware replies using dynamic reasoning.</p>
-            <div class="progress-bar"><div class="progress" style="width: 60%;"></div></div>
-            <span class="progress-label">60% Complete</span>
-        </div>
-        <div class="feature-item">
-            <h3>4. File Upload & Processing</h3>
-            <p>Supports file uploads, automatic parsing, and Neo4j integration.</p>
-            <div class="progress-bar"><div class="progress" style="width: 80%;"></div></div>
-            <span class="progress-label">80% Complete</span>
-        </div>
-    </section>
+<!-- Features Section -->
+<section id="features" class="features-section">
+    <h2>MAIA's Features & Development Progress</h2>
+    <div class="feature-item">
+        <h3>1. Emotional Engine Integration</h3>
+        <p>Simulates emotions like joy, sadness, and anger for dynamic interactions.</p>
+        <div class="progress-bar"><div class="progress" style="width: 90%;"></div></div>
+        <span class="progress-label">90% Complete</span>
+    </div>
+</section>
 
-    <!-- Gallery Section -->
-    <section id="gallery" class="gallery-section">
-        <h2>Gallery</h2>
-        <div class="gallery-container" id="gallery-container">
-            <!-- Images dynamically loaded by JS -->
-        </div>
-    </section>
+<!-- Gallery Section -->
+<section id="gallery" class="gallery-section">
+    <h2>Gallery</h2>
+    <div class="gallery-container" id="gallery-container">
+        <!-- Dynamically loaded -->
+    </div>
+</section>
 
-    <!-- Contact Section -->
-    <section id="contact" class="contact-section">
-        <h2>Contact</h2>
-        <p>Reach out to Hans Agerbo at: <a href="mailto:hans@example.com">hans@example.com</a></p>
-    </section>
+<!-- Footer -->
+<footer>
+    <p>&copy; 2024 MAIA - All Rights Reserved</p>
+</footer>
 
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2024 MAIA - All Rights Reserved</p>
-    </footer>
-
-    <!-- Script Files -->
-    <script src="static/js/script.js"></script>
+<!-- Scripts -->
+<script src="static/js/script.js"></script>
 </body>
 </html>

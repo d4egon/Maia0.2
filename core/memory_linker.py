@@ -7,9 +7,6 @@ class MemoryLinker:
         self.db = neo4j_connector
 
     def link_memories(self):
-        """
-        Automatically links memories based on content similarity.
-        """
         query = """
         MATCH (m1:Memory), (m2:Memory)
         WHERE m1.text <> m2.text
@@ -21,6 +18,7 @@ class MemoryLinker:
         """
         result = self.db.run_query(query)
         return result
+
 
     def adjust_memory_weight(self, memory_text, adjustment):
         """

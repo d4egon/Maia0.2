@@ -1,11 +1,9 @@
-// Theme Toggle
+// Theme Toggle with LocalStorage
 const toggleSwitch = document.getElementById("theme-toggle");
 toggleSwitch.addEventListener("change", () => {
     document.body.classList.toggle("light-theme");
     localStorage.setItem("theme", document.body.classList.contains("light-theme") ? "light" : "dark");
 });
-
-// Preserve Theme Preference on Reload
 document.addEventListener("DOMContentLoaded", () => {
     if (localStorage.getItem("theme") === "light") {
         document.body.classList.add("light-theme");
@@ -13,83 +11,94 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 });
 
-/* Optional Light Theme CSS */
-document.head.insertAdjacentHTML(
-    "beforeend",
-    `
-    <style>
-        body.light-theme {
-            background: #bdbfbf;
-            color: #333;
-        }
-        .navbar, footer {
-            background: #ddd;
-            color: #333;
-        }
-        .nav-links a {
-            color: #333;
-        }
-        .nav-links a:hover {
-            color: #00d8ff;
-        }
-        .cta-btn {
-            background: #333;
-            color: #bdbfbf;
-        }
-    </style>
-    `
-);
+// MAIA Face Click - Open Chat Window
+document.addEventListener("DOMContentLoaded", () => {
+    const heroImage = document.getElementById("maia-face");
 
-// Function to interact with MAIA
-function talkToMaia() {
-    const userInput = prompt("Ask MAIA anything...");
-    if (userInput) {
-        fetch("/ask_maia", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ question: userInput })
-        })
-        .then(response => {
-            if (!response.ok) throw new Error("Network response was not ok");
-            return response.json();
-        })
-        .then(data => {
-            alert(`MAIA says: ${data.response || "No response available."}`);
-        })
-        .catch(error => {
-            console.error("Error:", error);
-            alert("Oops! Something went wrong. Please try again.");
+    heroImage.addEventListener("click", () => {
+        heroImage.classList.add("hidden");
+
+        const chatPopup = document.createElement("div");
+        chatPopup.classList.add("maia-chat-popup");
+        chatPopup.innerHTML = `
+            <div class="maia-chat-header">
+                M.A.I.A. chat
+                <button class="close-chat" aria-label="Close">&times;</button>
+            </div>
+            <div class="maia-chat-log" id="chat-log"></div>
+            <div class="maia-chat-input">
+                <input type="text" id="chat-input" placeholder="Type your question here...">
+                <button id="chat-send-btn">Send</button>
+            </div>
+        `;
+        document.body.appendChild(chatPopup);
+
+        const inputField = document.getElementById("chat-input");
+        const sendButton = document.getElementById("chat-send-btn");
+        const chatLog = document.getElementById("chat-log");
+
+        inputField.focus();
+
+        document.querySelector(".close-chat").addEventListener("click", () => {
+            chatPopup.remove();
+            heroImage.classList.remove("hidden");
         });
-    }
-}
 
-// Dynamically load images into the gallery
+        function sendMessage() {
+            const userMessage = inputField.value.trim();
+            if (userMessage) {
+                chatLog.innerHTML += `<div class="user-message"><strong>You:</strong> ${userMessage}</div>`;
+                chatLog.scrollTop = chatLog.scrollHeight;
+
+                fetch("/ask_maia", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ question: userMessage })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    chatLog.innerHTML += `<div class="maia-message"><strong>MAIA:</strong> ${data.response || "No response available."}</div>`;
+                    chatLog.scrollTop = chatLog.scrollHeight;
+                })
+                .catch(err => {
+                    console.error("Error:", err);
+                    chatLog.innerHTML += `<div class="maia-message"><strong>MAIA:</strong> Something went wrong.</div>`;
+                });
+
+                inputField.value = "";
+            }
+        }
+
+        sendButton.addEventListener("click", sendMessage);
+        inputField.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") sendMessage();
+        });
+    });
+});
+
+// Dynamic Gallery Loader
 document.addEventListener("DOMContentLoaded", () => {
     const galleryContainer = document.getElementById("gallery-container");
+    if (!galleryContainer) return console.warn("Gallery container not found!");
 
-    // List of images in the 'static/images' folder
-    const imageFilenames = [
-        "maia1.jpg",
-        "maia2.jpg",
-        "maia3.jpg",
-        "maia4.jpg",
-        "maia5.jpg",
-        "maia6.jpg"
-    ];
-
-    // Check for gallery container
-    if (!galleryContainer) {
-        console.warn("Gallery container not found!");
-        return;
-    }
-
-    // Load each image into the gallery
-    imageFilenames.forEach(filename => {
-        const img = document.createElement("img");
-        img.src = `static/images/${filename}`;
-        img.alt = `Gallery Image ${filename}`;
-        img.loading = "lazy"; // Lazy loading for performance
-        img.onerror = () => console.error(`Failed to load image: ${filename}`);
-        galleryContainer.appendChild(img);
-    });
+    fetch('/get_gallery_images')
+        .then(response => response.json())
+        .then(data => {
+            if (data.images && data.images.length > 0) {
+                data.images.forEach(filename => {
+                    const img = document.createElement("img");
+                    img.src = `static/images/${filename}`;
+                    img.alt = `Gallery Image ${filename}`;
+                    img.loading = "lazy";
+                    img.onerror = () => console.error(`Failed to load image: ${filename}`);
+                    galleryContainer.appendChild(img);
+                });
+            } else {
+                galleryContainer.innerHTML = "<p>No images found.</p>";
+            }
+        })
+        .catch(err => {
+            console.error("Failed to fetch gallery images:", err);
+            galleryContainer.innerHTML = "<p>Error loading gallery.</p>";
+        });
 });

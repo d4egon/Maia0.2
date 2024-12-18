@@ -1,16 +1,10 @@
-# Filename: /core/git_manager.py
-
-import subprocess
+from subprocess import run, CalledProcessError
 import logging
 
-# Initialize logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 def create_git_commit(sync_log):
-    """
-    Automatically create a Git commit with a meaningful message.
-    """
     try:
         commit_message = "Auto-sync: "
         changes = []
@@ -23,34 +17,19 @@ def create_git_commit(sync_log):
             changes.append(f"Skipped {len(sync_log['skipped'])} unchanged files")
 
         commit_message += ", ".join(changes) if changes else "No changes detected"
-
-        # Stage changes and create a commit
-        subprocess.run(["git", "add", "."], check=True)
-        subprocess.run(["git", "commit", "-m", commit_message], check=True)
-
+        run(["git", "add", "."], check=True)
+        run(["git", "commit", "-m", commit_message], check=True)
         logger.info(f"[GIT COMMIT] {commit_message}")
         return commit_message
-
-    except subprocess.CalledProcessError as e:
-        error_message = f"Git commit failed: {e.stderr}"
-        logger.error(error_message, exc_info=True)
-        return error_message
-
+    except CalledProcessError as e:
+        logger.error(f"Git commit failed: {e.stderr}", exc_info=True)
+        return str(e)
 
 def push_to_git():
-    """
-    Push committed changes to the remote Git repository.
-    """
     try:
-        push_result = subprocess.run(
-            ["git", "push"],
-            check=True,
-            capture_output=True,
-            text=True
-        )
+        push_result = run(["git", "push"], check=True, capture_output=True, text=True)
         logger.info("[GIT PUSH] Push successful.")
         return push_result.stdout
-    except subprocess.CalledProcessError as e:
-        error_message = f"Git push failed: {e.stderr}"
-        logger.error(error_message, exc_info=True)
-        return error_message
+    except CalledProcessError as e:
+        logger.error(f"Git push failed: {e.stderr}", exc_info=True)
+        return str(e)

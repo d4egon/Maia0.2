@@ -7,6 +7,18 @@ from sentence_transformers import SentenceTransformer, util
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+class SentenceParser:
+    def __init__(self):
+        self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+    def parse_and_search(self, input_text, memory_engine):
+        embedding = self.embedding_model.encode(input_text.lower(), convert_to_tensor=True)
+        memories = memory_engine.search_memory(input_text)
+
+        # Use embedding similarity to improve search
+        best_match = max(memories, key=lambda m: util.cos_sim(embedding, self.embedding_model.encode(m["text"].lower())), default=None)
+        return best_match if best_match else "No matching memory found."
+
 class ContextSearchEngine:
     def __init__(self, neo4j_connector):
         self.db = neo4j_connector

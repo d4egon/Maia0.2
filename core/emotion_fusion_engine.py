@@ -1,6 +1,7 @@
 # Filename: /core/emotion_fusion_engine.py
 
 import logging
+import fileinput
 from core.emotion_engine import EmotionEngine
 
 # Initialize logging
@@ -26,6 +27,8 @@ class EmotionFusionEngine:
         # Search contextual memory
         context_data = self.memory_engine.search_memory(text_input)
         context_emotion, context_confidence = self.analyze_context_emotion(context_data)
+        fused_emotion = self.emotion_fusion_engine.fuse_emotions(visual_input=None, text_input=user_input)
+        response = self.response_generator.generate("query", user_input, emotion=fused_emotion)
 
         # Decision Fusion Logic
         final_emotion = self.determine_final_emotion(

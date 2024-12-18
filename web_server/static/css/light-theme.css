@@ -1,0 +1,25 @@
+body.light-theme {
+    background-color: #f3f3f3;
+    color: #333;
+}
+
+body.light-theme .navbar,
+body.light-theme footer {
+    background: #ddd;
+    color: #333;
+}
+
+body.light-theme .nav-links a:hover {
+    color: #00d8ff;
+}
+
+.maia-popup {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 250px;
+    background: #23252b;
+    color: #f4f4f4;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+}
