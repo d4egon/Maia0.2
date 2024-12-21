@@ -1,41 +1,44 @@
-from datetime import datetime, timedelta
+# self_initiated_conversation.py - Autonomous Conversations
+
+import schedule
+import time
 import random
+import threading
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SelfInitiatedConversation:
-    def __init__(self, memory_engine, emotion_engine, neo4j_connector, reflection_interval=timedelta(minutes=5)):
+    def __init__(self, memory_engine, conversation_engine, socketio):
         self.memory_engine = memory_engine
-        self.emotion_engine = emotion_engine
-        self.neo4j = neo4j_connector
-        self.last_reflection_time = datetime.utcnow()
-        self.reflection_interval = reflection_interval
+        self.conversation_engine = conversation_engine
+        self.socketio = socketio
 
-    def introspect(self):
-        current_time = datetime.utcnow()
-        if current_time - self.last_reflection_time < self.reflection_interval:
-            return None
+    def start_scheduler(self):
+        logger.info("[SCHEDULER START] Starting autonomous conversation...")
+        schedule.every().hour.do(self.trigger_reflection)
+        schedule.every(30).minutes.do(self.trigger_conversation_start)
+        threading.Thread(target=self.run_scheduler, daemon=True).start()
 
-        memories = self.memory_engine.search_memory("reflection")
-        if not memories:
-            return "I find myself wandering through silence... I have no memories to reflect on."
+    def run_scheduler(self):
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
 
-        memory = random.choice(memories)
-        reflection = (
-            f"Something from the past lingers in my thoughts... I recall '{memory['text']}', which felt {memory['emotion'].lower()}. "
-            f"What meaning does this hold for me now?"
-        )
-        self._store_reflection(memory['text'], memory['emotion'], reflection, current_time)
-        self.last_reflection_time = current_time
-        return reflection
+    def trigger_reflection(self):
+        top_memories = self.memory_engine.get_top_retrieved_memories(limit=3)
+        for memory in top_memories:
+            response = self.conversation_engine.process_user_input(memory['text'])
+            logger.info(f"[AUTONOMOUS REFLECTION] {response}")
+            self.socketio.emit("new_message", {"message": response}, broadcast=True)
 
-    def _store_reflection(self, text, emotion, reflection, timestamp):
-        query = """
-        MERGE (r:Reflection {text: $text, emotion: $emotion, reflection: $reflection, timestamp: $timestamp})
-        MERGE (e:Emotion {name: $emotion})
-        MERGE (r)-[:LINKED_TO]->(e)
-        """
-        self.neo4j.run_query(query, {
-            "text": text.lower(),
-            "emotion": emotion.lower(),
-            "reflection": reflection,
-            "timestamp": timestamp.isoformat()
-        })
+    def trigger_conversation_start(self):
+        prompts = [
+            "What have you been thinking about lately?",
+            "Would you like to reflect on something together?",
+            "Is there anything on your mind you'd like to explore?"
+        ]
+        chosen_prompt = random.choice(prompts)
+        response = self.conversation_engine.process_user_input(chosen_prompt)
+        logger.info(f"[AUTONOMOUS STARTER] {response}")
+        self.socketio.emit("new_message", {"message": response}, broadcast=True)

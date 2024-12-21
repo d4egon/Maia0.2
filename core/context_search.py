@@ -22,7 +22,6 @@ class SentenceParser:
 class ContextSearchEngine:
     def __init__(self, neo4j_connector):
         self.db = neo4j_connector
-        # Load pre-trained sentence-transformer model
         self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
     def search_related_contexts(self, text, similarity_threshold=0.7):
@@ -65,10 +64,7 @@ class ContextSearchEngine:
             logger.error(f"[SEARCH FAILED] {e}", exc_info=True)
             return []
 
-    def find_contextual_links(self, memory_text, link_type="RELATED_TO"):
-        """
-        Find directly linked memories from the graph database.
-        """
+    def create_dynamic_links(self, source_text, related_memories, link_type="RELATED_TO"):
         try:
             query = f"""
             MATCH (m:Memory {{text: $memory_text}})-[:{link_type}]-(related:Memory)

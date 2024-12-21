@@ -87,114 +87,6 @@ h1, h2, h3, p {
     transform: scale(1.05);
 }
 
-/* Footer */
-footer {
-    background: #23252b;
-    color: #f4f4f4;
-    text-align: center;
-    padding: 1em;
-}
-
-/* Gallery Section */
-#gallery-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    padding: 2em;
-}
-
-#gallery-container img {
-    width: 100%;
-    height: auto;
-    border-radius: 10px;
-    border: 2px solid #444;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    cursor: pointer;
-}
-
-#gallery-container img:hover {
-    transform: scale(1.05);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
-}
-
-/* Image Full-Size Overlay */
-.image-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.9);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.image-overlay .overlay-content {
-    position: relative;
-}
-
-.image-overlay img {
-    max-width: 90%;
-    max-height: 90%;
-    border-radius: 10px;
-}
-
-.image-overlay .close-btn {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    font-size: 2rem;
-    color: #fff;
-    cursor: pointer;
-    transition: color 0.3s ease;
-}
-
-.image-overlay .close-btn:hover {
-    color: #00d8ff;
-}
-
-/* Features Section Spacing */
-.features-section {
-    padding: 2em;
-    margin-top: 3em; /* Add spacing to push it further down */
-    background: #1a1e26;
-    color: #f4f4f4;
-    text-align: center;
-    transition: background 0.3s ease, color 0.3s ease;
-}
-
-.feature-item {
-    margin: 1.5em auto; /* Add vertical spacing between boxes */
-    padding: 1em;
-    background: #23252b;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-    max-width: 800px;
-    transition: background 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
-}
-
-.feature-item:hover {
-    transform: translateY(5px); /* Subtle hover effect to lift the box */
-}
-
-
-/* Big Image (Shrinked by 20%) */
-.hero-image img {
-    max-width: 240px; /* Adjust size to shrink it by 20% */
-    border-radius: 50%;
-    box-shadow: 0 0 20px #00d8ff;
-    cursor: pointer;
-    transition: transform 0.3s ease, opacity 0.3s ease;
-}
-
-.hero-image img.hidden {
-    opacity: 0; /* Make it invisible */
-    pointer-events: none; /* Prevent interaction */
-}
-
 /* Chat Popup */
 .maia-chat-popup {
     position: fixed;
@@ -222,12 +114,17 @@ footer {
 }
 
 .maia-chat-log {
-    height: 200px;
+    height: 250px;
     overflow-y: auto;
     padding: 1em;
     font-size: 0.9em;
     background: #1a1e26;
     color: #f4f4f4;
+}
+
+.maia-chat-log .maia-message.typing {
+    font-style: italic;
+    color: #888;
 }
 
 .maia-chat-input {
@@ -271,4 +168,31 @@ footer {
 
 .maia-message {
     color: #f4f4f4;
+}
+
+/* Dynamic Gallery */
+#gallery-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    padding: 2em;
+}
+
+#gallery-container img {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+    border: 2px solid #444;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+#gallery-container img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+}
+
+.hidden {
+    display: none;
 }

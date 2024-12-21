@@ -1,7 +1,16 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\NLP",
+    "\\tests",
+    "\\web_server",
+    "\\web_server\\static",
+    "\\web_server\\static\\css",
+    "\\web_server\\static\\images",
+    "\\web_server\\static\\js",
+    "\\web_server\\templates",
+    "\\web_server\\uploads"
   ],
-  "SelectedNode": "\\LICENSE",
+  "SelectedNode": "\\core\\memory_engine.py",
   "PreviewInSolutionExplorer": false
 }

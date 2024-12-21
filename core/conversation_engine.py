@@ -1,44 +1,46 @@
-﻿# Filename: /core/conversation_engine.py
-
-
+﻿# conversation_engine.py - Fully Dynamic
 
 import logging
 from core.memory_engine import MemoryEngine
-from core.response_generator import ResponseGenerator
+from NLP.response_generator import ResponseGenerator
+from thought_engine import ThoughtEngine
+from context_search import ContextSearch
 
-# Initialize logging
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
-
 
 class ConversationEngine:
-    def __init__(self, memory_engine, response_generator):
+    def __init__(self, memory_engine, response_generator, thought_engine, context_search):
         self.memory_engine = memory_engine
         self.response_generator = response_generator
+        self.thought_engine = thought_engine
+        self.context_search = context_search
 
-    def generate_conversation(self, user_input, context_limit=5):
-        greetings = ["hello", "hi", "hey", "good morning", "good day"]
-        if any(greet in user_input.lower() for greet in greetings):
-            return "Hello! How can I assist you today? 😊"
+    def process_user_input(self, user_input):
+        logger.info(f"[USER INPUT RECEIVED] {user_input}")
 
-        relevant_memories = self.memory_engine.search_related_memories(user_input, context_limit)
-        context_summary = self.build_context_summary(relevant_memories) or "No relevant context found."
-        response = self.response_generator.generate_response(user_input, context_summary)
-        self.memory_engine.store_memory(user_input, "user_input")
-        self.memory_engine.store_memory(response, "maia_response")
-        return response
+        # Step 1: Contextual Memory Search
+        memory = self.memory_engine.search_memory(user_input)
+        if memory:
+            response = self.response_generator.generate_response(memory)
+            logger.info(f"[MEMORY RESPONSE] {response}")
+            return response
 
-    def build_context_summary(self, memories):
-        """
-        Create a summarized context from related memories.
-        """
-        if not memories:
-            return "No relevant context found."
+        # Step 2: Contextual Search for Similar Memories
+        context_result = self.context_search.search_related(user_input)
+        if context_result:
+            response = self.response_generator.generate_response(context_result)
+            logger.info(f"[CONTEXTUAL RESPONSE] {response}")
+            return response
 
-        summary = "\n".join([f"Memory: {m['text']} (Emotion: {m['emotion']})" for m in memories])
-        logger.debug(f"[CONTEXT SUMMARY] {summary}")
-        return summary
+        # Step 3: Thought Generation for New Queries
+        generated_thought = self.thought_engine.generate_thought(user_input)
+        if generated_thought:
+            self.memory_engine.store_memory(user_input, ["reflective"])
+            response = self.response_generator.generate_response(generated_thought)
+            logger.info(f"[THOUGHT RESPONSE] {response}")
+            return response
 
-# Complete Integration
-if __name__ == "__main__":
-    print("Core modules fixed and loaded successfully!")
+        # Step 4: Fallback Response (Suggest Memory Storage)
+        response = self.memory_engine.suggest_memory_storage(user_input)
+        logger.warning(f"[FALLBACK RESPONSE] {response['response']}")
+        return response['response']
