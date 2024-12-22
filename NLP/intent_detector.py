@@ -1,6 +1,16 @@
+import logging
+from typing import List, Dict
+
+# Configure logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 class IntentDetector:
     def __init__(self):
-        self.intents = {
+        """
+        Initialize the IntentDetector with a comprehensive list of intents and associated keywords.
+        """
+        self.intents: Dict[str, List[str]] = {
             "greeting": ["hello", "hi", "hey", "greetings", "good morning", "good evening", "howdy", "salutations"],
             "identity": ["who", "what", "name", "you", "your purpose", "identity", "self", "origin"],
             "exit": ["bye", "exit", "quit", "goodbye", "see you later", "farewell", "adios", "later"],
@@ -45,8 +55,20 @@ class IntentDetector:
             "psychology": ["psychology", "mind", "behavior", "emotion", "therapy", "mental", "counsel", "personality"],
         }
 
-    def detect_intent(self, tokens):
-        for intent, keywords in self.intents.items():
-            if any(token.lower() in keywords for token in tokens):
-                return intent
-        return "unknown"
+    def detect_intent(self, tokens: List[str]) -> str:
+        """
+        Detect the intent based on the presence of keywords in the tokenized text.
+
+        :param tokens: List of tokens (words) to check against intents.
+        :return: The detected intent or 'unknown' if no match found.
+        """
+        try:
+            for intent, keywords in self.intents.items():
+                if any(token.lower() in keywords for token in tokens):
+                    logger.info(f"[INTENT DETECTED] Intent: {intent} for tokens: {tokens}")
+                    return intent
+            logger.info(f"[INTENT DETECTION] No intent matched for tokens: {tokens}")
+            return "unknown"
+        except Exception as e:
+            logger.error(f"[INTENT DETECTION ERROR] Error detecting intent: {e}", exc_info=True)
+            return "unknown"

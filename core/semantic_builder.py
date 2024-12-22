@@ -1,25 +1,80 @@
 # File: /core/semantic_builder.py
 
+import torch
 from transformers import pipeline
+from sklearn.metrics.pairwise import cosine_similarity
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class SemanticBuilder:
-    def __init__(self, graph_client):
+    def __init__(self, graph_client, similarity_threshold=0.8):
         self.graph_client = graph_client
         self.similarity_model = pipeline("text-similarity", model="all-MiniLM-L6-v2")
+        self.similarity_threshold = similarity_threshold
 
-    def build_relationships(self, label="Emotion"):
+    def compute_similarities(self, embeddings):
+        """
+        Compute cosine similarity between all pairs of embeddings.
+
+        :param embeddings: List of embedding vectors
+        :return: Similarity matrix
+        """
+        embeddings_tensor = torch.tensor(embeddings)
+        return cosine_similarity(embeddings_tensor)
+
+    def build_relationships(self, label="Emotion", relationship_type="SIMILAR_TO"):
+        """
+        Build relationships in the graph based on similarity of node descriptions.
+
+        :param label: The label of nodes to analyze
+        :param relationship_type: Type of relationship to create based on similarity
+        """
         query = f"""
         MATCH (e:{label})
         RETURN e.id AS id, e.name AS name, e.description AS description
         """
-        nodes = self.graph_client.run_query(query)
-        descriptions = [node["description"] for node in nodes if node["description"]]
-        embeddings = self.similarity_model([desc for desc in descriptions])
-        for i, embedding1 in enumerate(embeddings):
-            for j, embedding2 in enumerate(embeddings):
-                if i < j and self.similarity_model(embedding1, embedding2)["similarity"] > 0.8:
-                    self.graph_client.run_query(f"""
-                    MATCH (n1), (n2)
-                    WHERE n1.id = '{nodes[i]['id']}' AND n2.id = '{nodes[j]['id']}'
-                    MERGE (n1)-[:SIMILAR_TO]->(n2)
-                    """)
+        try:
+            nodes = self.graph_client.run_query(query)
+            descriptions = [node["description"] for node in nodes if node["description"]]
+            
+            if not descriptions:
+                logger.warning(f"No descriptions found for label: {label}")
+                return
+
+            embeddings = self.similarity_model(descriptions)
+            similarities = self.compute_similarities(embeddings)
+
+            batch_size = 1000
+            for i in range(0, len(similarities), batch_size):
+                for j in range(i + 1, min(i + batch_size, len(similarities))):
+                    if similarities[i][j] > self.similarity_threshold:
+                        self.create_relationship(nodes[i]['id'], nodes[j]['id'], relationship_type)
+
+        except Exception as e:
+            logger.error(f"Error building relationships: {e}")
+
+    def create_relationship(self, id1, id2, relationship_type):
+        """
+        Create a relationship between two nodes in the graph.
+
+        :param id1: ID of the first node
+        :param id2: ID of the second node
+        :param relationship_type: Type of relationship to establish
+        """
+        query = f"""
+        MATCH (n1), (n2)
+        WHERE n1.id = '{id1}' AND n2.id = '{id2}'
+        MERGE (n1)-[:{relationship_type}]->(n2)
+        """
+        try:
+            self.graph_client.run_query(query)
+            logger.info(f"Relationship {relationship_type} created between {id1} and {id2}")
+        except Exception as e:
+            logger.error(f"Failed to create relationship between {id1} and {id2}: {e}")
+
+# Usage example:
+# sb = SemanticBuilder(graph_client)
+# sb.build_relationships(label="Emotion", relationship_type="SIMILAR_TO")

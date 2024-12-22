@@ -3,20 +3,26 @@ from datetime import datetime
 from core.neo4j_connector import Neo4jConnector
 import emoji
 import re
+from typing import Dict, List, Any, Optional
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class MemoryEngine:
     DECAY_FACTOR = 0.1
 
-    def __init__(self, db):
+    def __init__(self, db: Neo4jConnector):
+        """
+        Initialize MemoryEngine with database connector and setup initial configurations.
+
+        :param db: An instance of Neo4jConnector for database operations.
+        """
         self.db = db
-        self.memory_cache = {}
+        self.memory_cache: Dict[str, Dict] = {}
         self._setup_index()
 
     def _setup_index(self):
-        """Ensure the full-text index exists in Neo4j."""
+        """Ensure the full-text index and constraint exist in Neo4j."""
         try:
             self.db.run_query(
                 "CREATE FULLTEXT INDEX memoryIndex IF NOT EXISTS FOR (n:Memory) ON EACH [n.text]"
@@ -29,7 +35,7 @@ class MemoryEngine:
             logger.error(f"[INDEX SETUP FAILED] {e}", exc_info=True)
 
     @staticmethod
-    def clean_text(text):
+    def clean_text(text: str) -> str:
         """Convert emojis and sanitize text for Neo4j full-text queries."""
         text_with_emojis = emoji.demojize(text)
         sanitized_text = re.sub(r'[\s"<>|(){}\[\]+]', ' ', text_with_emojis).strip()
@@ -37,7 +43,7 @@ class MemoryEngine:
         return sanitized_text
 
     @staticmethod
-    def prepare_query_text(text):
+    def prepare_query_text(text: str) -> str:
         """Wrap query text in quotes to prevent EOF errors."""
         if not text.strip():
             return ""
@@ -45,13 +51,13 @@ class MemoryEngine:
         logger.debug(f"[PREPARED QUERY] Wrapped Text: {wrapped_text}")
         return wrapped_text
 
-    def search_memory(self, text):
+    def search_memory(self, text: str) -> Optional[Dict]:
         """Search memory with sanitized text and improved similarity handling."""
         sanitized_text = self.clean_text(text.lower())
         wrapped_text = self.prepare_query_text(sanitized_text)
 
         if not wrapped_text:
-            logger.warning(f"[EMPTY QUERY] Skipping search for empty sanitized text.")
+            logger.warning("[EMPTY QUERY] Skipping search for empty sanitized text.")
             return None
 
         if sanitized_text in self.memory_cache:
@@ -83,7 +89,7 @@ class MemoryEngine:
             logger.error(f"[SEARCH ERROR] Unable to search memory '{text}': {e}", exc_info=True)
             return None
 
-    def store_memory(self, text, emotions=None, extra_properties=None, pleasure=0.5, arousal=0.5):
+    def store_memory(self, text: str, emotions: Optional[List[str]] = None, extra_properties: Optional[Dict] = None, pleasure: float = 0.5, arousal: float = 0.5):
         """Store memory in Neo4j with contextual and emotional data."""
         sanitized_text = self.clean_text(text.lower())
         wrapped_text = self.prepare_query_text(sanitized_text)
@@ -110,21 +116,21 @@ class MemoryEngine:
                 similarity_score = result_similarity[0]['score']
 
                 query_linking = """
-                    MATCH (m1:Memory {text: $similar_text})
-                    MERGE (m2:Memory {text: $new_text})
-                    ON CREATE SET 
-                        m2.created_at = COALESCE($timestamp, datetime()),
-                        m2.pleasure = $pleasure,
-                        m2.arousal = $arousal,
-                        m2.retrieval_count = 0,
-                        m2.emotions = $emotions
-                    MERGE (m1)-[:SIMILAR_TO {score: $similarity_score}]->(m2)
-                    WITH m2
-                    UNWIND $emotions AS emotion
-                    MERGE (e:Emotion {name: emotion})
-                    MERGE (m2)-[:EMOTION_OF]->(e)
-                    RETURN m2.text AS memory_text, COUNT(m2) > 0 AS new_memory
-                    """
+                MATCH (m1:Memory {text: $similar_text})
+                MERGE (m2:Memory {text: $new_text})
+                ON CREATE SET 
+                    m2.created_at = COALESCE($timestamp, datetime()),
+                    m2.pleasure = $pleasure,
+                    m2.arousal = $arousal,
+                    m2.retrieval_count = 0,
+                    m2.emotions = $emotions
+                MERGE (m1)-[:SIMILAR_TO {score: $similarity_score}]->(m2)
+                WITH m2
+                UNWIND $emotions AS emotion
+                MERGE (e:Emotion {name: emotion})
+                MERGE (m2)-[:EMOTION_OF]->(e)
+                RETURN m2.text AS memory_text, COUNT(m2) > 0 AS new_memory
+                """
                 params_linking = {
                     "similar_text": similar_text,
                     "new_text": sanitized_text,
@@ -138,7 +144,7 @@ class MemoryEngine:
                 result_linking = self.db.run_query(query_linking, params_linking)
                 logger.info(f"[LINKED MEMORY] New memory '{text}' linked to '{similar_text}' with similarity {similarity_score}.")
             else:
-               # Store new memory with emotions
+                # Store new memory with emotions
                 query_store = """
                 MERGE (m:Memory {text: $text})
                 ON CREATE SET 
@@ -179,7 +185,7 @@ class MemoryEngine:
         except Exception as e:
             logger.error(f"[MEMORY STORAGE FAILED] Unable to store memory '{text}': {e}", exc_info=True)
 
-    def update_retrieval_stats(self, text):
+    def update_retrieval_stats(self, text: str) -> Optional[Dict]:
         """Update retrieval frequency and adjust pleasure/arousal."""
         try:
             query = """
