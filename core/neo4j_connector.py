@@ -1,11 +1,13 @@
-# Updated Neo4j Connector
+# Filename: neo4j_connector.py
+# Location: core folder
+
 from neo4j import GraphDatabase, exceptions
 import logging
 import time
 from typing import Dict, List, Optional
 
-logger = logging.getLogger(__name__)
 # Configure logging to include timestamp and log level
+logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class Neo4jConnector:
@@ -26,7 +28,7 @@ class Neo4jConnector:
         self.retry_delay = retry_delay
         self.driver = self._connect_with_retry()
 
-    def _connect_with_retry(self) -> GraphDatabase.Driver:
+    def _connect_with_retry(self) -> GraphDatabase.driver:
         """
         Attempt to connect to Neo4j with retry logic for transient failures.
 

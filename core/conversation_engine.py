@@ -4,7 +4,7 @@ import logging
 from typing import Dict, List, Any
 from core.memory_engine import MemoryEngine
 from NLP.response_generator import ResponseGenerator
-from thought_engine import ThoughtEngine
+from core.thought_engine import ThoughtEngine
 from context_search import ContextSearch
 
 # Configure logging
