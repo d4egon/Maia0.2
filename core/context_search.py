@@ -8,35 +8,6 @@ from typing import List, Dict, Optional
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-class SentenceParser:
-    def __init__(self):
-        """
-        Initialize SentenceParser with a sentence transformer model for embeddings.
-        """
-        self.embedding_model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-
-    def parse_and_search(self, input_text: str, memory_engine) -> Dict:
-        """
-        Parse input text to find the best matching memory using embeddings.
-
-        :param input_text: The text to search for.
-        :param memory_engine: An object with a `search_memory` method to fetch memories.
-        :return: Dictionary with the best match or a message if no match found.
-        """
-        try:
-            input_embedding = self.embedding_model.encode(input_text.lower(), convert_to_tensor=True)
-            memories = memory_engine.search_memory(input_text)
-
-            if not memories:
-                logger.info(f"[MEMORY SEARCH] No memories found for '{input_text}'")
-                return {"result": "No matching memory found."}
-
-            best_match = max(memories, key=lambda m: util.cos_sim(input_embedding, self.embedding_model.encode(m["text"].lower())), default=None)
-            return best_match if best_match else {"result": "No matching memory found."}
-        except Exception as e:
-            logger.error(f"[PARSE & SEARCH FAILED] {e}", exc_info=True)
-            return {"result": "Error in processing search."}
-
 class ContextSearchEngine:
     def __init__(self, neo4j_connector):
         """
@@ -88,6 +59,12 @@ class ContextSearchEngine:
         except Exception as e:
             logger.error(f"[SEARCH FAILED] {e}", exc_info=True)
             return []
+
+    def search_related(self, text: str) -> List[Dict]:
+        """
+        Wrapper for `search_related_contexts` to align with ConversationEngine calls.
+        """
+        return self.search_related_contexts(text)
 
     def create_dynamic_links(self, source_text: str, related_memories: List[Dict], link_type: str = "RELATED_TO"):
         """

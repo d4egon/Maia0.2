@@ -4,7 +4,7 @@ import re
 import logging
 from collections import defaultdict
 from transformers import pipeline
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -23,6 +23,8 @@ class EmotionEngine:
             "surprised": {"keywords": ["surprised", "shocked", "amazed", "startled"], "weight": 1.5},
             "neutral": {"keywords": ["okay", "fine", "alright", "normal"], "weight": 1.0},
         }
+
+        self.dynamic_emotional_state = {"neutral": 100}  # Default emotional state
 
         try:
             self.sentiment_analyzer = pipeline("sentiment-analysis")
@@ -67,6 +69,9 @@ class EmotionEngine:
                 detected_emotion = max(emotion_scores, key=emotion_scores.get)
                 confidence = round(emotion_scores[detected_emotion], 2)
                 logger.info(f"[DETECTED EMOTION] {detected_emotion} (Confidence: {confidence})")
+
+                # Update dynamic emotional state
+                self.update_emotional_state(detected_emotion, confidence)
                 return detected_emotion, confidence
 
             logger.info("[DEFAULT] No matching emotion found. Defaulting to 'neutral'.")
@@ -99,3 +104,22 @@ class EmotionEngine:
         except Exception as e:
             logger.error(f"[CONTEXTUAL ANALYSIS ERROR] {e}", exc_info=True)
             return "neutral", 0.0  # Default to neutral emotion with zero confidence if an error occurs
+
+    def update_emotional_state(self, emotion: str, confidence: float):
+        """
+        Update the dynamic emotional state based on detected emotions and confidence levels.
+
+        :param emotion: The detected emotion.
+        :param confidence: The confidence level of the detected emotion.
+        """
+        if emotion not in self.dynamic_emotional_state:
+            self.dynamic_emotional_state[emotion] = confidence
+        else:
+            self.dynamic_emotional_state[emotion] += confidence
+
+        # Decay other emotions slightly
+        for emo in self.dynamic_emotional_state:
+            if emo != emotion:
+                self.dynamic_emotional_state[emo] *= 0.9
+
+        logger.info(f"[EMOTIONAL STATE UPDATED] {self.dynamic_emotional_state}")
