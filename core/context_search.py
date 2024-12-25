@@ -2,7 +2,7 @@
 
 import logging
 from sentence_transformers import SentenceTransformer, util
-from typing import List, Dict, Optional
+from typing import List, Dict
 
 # Initialize logging
 logger = logging.getLogger(__name__)

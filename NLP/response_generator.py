@@ -3,12 +3,11 @@
 import random
 import logging
 from typing import Dict, List
+from NLP.contextual_intent_detector import ContextualIntentDetector
 
 # Configure logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-
-from NLP.contextual_intent_detector import ContextualIntentDetector
 
 class ResponseGenerator:
     

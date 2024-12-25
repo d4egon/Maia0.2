@@ -1,6 +1,13 @@
-﻿class ConversationEngine:
-    def __init__(self, memory_engine: MemoryEngine, response_generator: ResponseGenerator, 
-                 thought_engine: ThoughtEngine, context_search: ContextSearchEngine, collaborative_learning: CollaborativeLearning):
+﻿from venv import logger
+from NLP.response_generator import ResponseGenerator
+from core.collaborative_learning import CollaborativeLearning
+from core.context_search import ContextSearchEngine
+from core.memory_engine import MemoryEngine
+from core.thought_engine import ThoughtEngine
+
+
+class ConversationEngine:
+    def __init__(self, memory_engine: MemoryEngine, response_generator: ResponseGenerator, thought_engine: ThoughtEngine, context_search: ContextSearchEngine, collaborative_learning: CollaborativeLearning):
         """
         Initialize the ConversationEngine with necessary components.
 

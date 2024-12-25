@@ -1,3 +1,7 @@
+from typing import Optional
+from venv import logger
+from core.conversation_engine import ConversationEngine
+
 class CollaborativeLearning:
     def __init__(self, conversation_engine: ConversationEngine):
         self.conversation_engine = conversation_engine
