@@ -24,6 +24,9 @@ from core.deduplication_engine import DeduplicationEngine
 from NLP.consciousness_engine import ConsciousnessEngine
 from NLP.intent_detector import IntentDetector
 from core.self_initiated_conversation import SelfInitiatedConversation
+from flask_socketio import SocketIO
+
+
 
 # Load Environment Variables
 load_dotenv()
@@ -52,6 +55,8 @@ app = Flask(
 )
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE_MB * 1024 * 1024  # Convert MB to bytes
+
+socketio = SocketIO(app)
 
 # Secure Headers Setup
 @app.after_request
@@ -260,7 +265,9 @@ def introspect():
         logger.error(f"[INTROSPECTION ERROR] {e}", exc_info=True)
         return jsonify({"message": "Failed to introspect.", "status": "error"}), 500
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     logger.info("[START] MAIA Server is starting...")
     self_initiated_conversation.start_scheduler()
-    app.run(host='0.0.0.0', port=5000, debug=os.getenv("FLASK_DEBUG", "false").lower() == "true")
+    socketio.run(app, host="0.0.0.0", port=5000, debug=os.getenv("FLASK_DEBUG", "false").lower() == "true")
+

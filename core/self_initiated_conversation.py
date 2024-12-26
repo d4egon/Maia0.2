@@ -6,11 +6,17 @@ import threading
 import logging
 from typing import List, Dict
 
+import socketio
+
+from core import conversation_engine, memory_engine
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class SelfInitiatedConversation:
+
+    
     def __init__(self, memory_engine, conversation_engine, socketio):
         """
         Initialize the SelfInitiatedConversation with necessary components.
@@ -22,7 +28,7 @@ class SelfInitiatedConversation:
         self.memory_engine = memory_engine
         self.conversation_engine = conversation_engine
         self.socketio = socketio
-
+        
     def start_scheduler(self):
         """
         Start the scheduler for autonomous conversation triggers.
@@ -72,3 +78,7 @@ class SelfInitiatedConversation:
             self.socketio.emit("new_message", {"message": response}, broadcast=True)
         except Exception as e:
             logger.error(f"[CONVERSATION START ERROR] {e}", exc_info=True)
+
+self_initiated_conversation = SelfInitiatedConversation(
+        memory_engine, conversation_engine, socketio
+    )

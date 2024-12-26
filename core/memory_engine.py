@@ -216,3 +216,26 @@ class MemoryEngine:
         except Exception as e:
             logger.error(f"[ATTRIBUTE UPDATE FAILED] Unable to update attributes for '{text}': {e}", exc_info=True)
             return None
+
+    def get_top_retrieved_memories(self, limit: int = 3) -> List[Dict]:
+        """
+        Retrieve top memories based on retrieval count.
+
+        :param limit: The number of top memories to retrieve.
+        :return: A list of memory dictionaries.
+        """
+        try:
+            query = """
+            MATCH (m:Memory)
+            RETURN m.text AS text, m.retrieval_count AS retrieval_count
+            ORDER BY m.retrieval_count DESC
+            LIMIT $limit
+            """
+            params = {"limit": limit}
+            result = self.db.run_query(query, params)
+
+            logger.info(f"[TOP MEMORIES] Retrieved {len(result)} top memories.")
+            return result
+        except Exception as e:
+            logger.error(f"[RETRIEVE TOP MEMORIES ERROR] {e}", exc_info=True)
+            return []
