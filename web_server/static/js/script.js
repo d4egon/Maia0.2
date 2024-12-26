@@ -5,6 +5,10 @@
     const chatLog = document.getElementById("chat-log");
     const inputField = document.getElementById("chat-input");
     const sendButton = document.getElementById("chat-send-btn");
+    const fileInput = document.getElementById("file-input");
+    const uploadButton = document.getElementById("upload-button");
+    const uploadFeedback = document.getElementById("upload-feedback");
+
     let chatPopupVisible = false;
 
     function initializeChat() {
@@ -62,6 +66,39 @@
         inputField.focus();
     }
 
+    function uploadFile() {
+        if (!fileInput.files.length) {
+            uploadFeedback.innerText = "No file selected. Please choose a file to upload.";
+            return;
+        }
+
+        const file = fileInput.files[0];
+        const formData = new FormData();
+        formData.append("file", file);
+
+        uploadFeedback.innerText = "Uploading file...";
+
+        fetch("/upload", {
+            method: "POST",
+            body: formData,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.status === "success") {
+                    uploadFeedback.innerHTML = `
+                        <strong>Success:</strong> ${data.message}<br>
+                        <strong>Content Preview:</strong> ${data.summary}
+                    `;
+                } else {
+                    uploadFeedback.innerHTML = `<strong>Error:</strong> ${data.message}`;
+                }
+            })
+            .catch((err) => {
+                console.error("Error uploading file:", err);
+                uploadFeedback.innerText = "An unexpected error occurred during the upload.";
+            });
+    }
+
     // Close chat functionality
     document.querySelector(".close-chat").addEventListener("click", () => {
         chatPopup.classList.add("hidden");
@@ -72,6 +109,8 @@
     inputField.addEventListener("keydown", (e) => {
         if (e.key === "Enter") sendMessage();
     });
+
+    uploadButton.addEventListener("click", uploadFile);
 
     messengerIcon.addEventListener("click", initializeChat);
     talkToMaiaBtn.addEventListener("click", initializeChat);

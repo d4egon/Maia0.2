@@ -45,16 +45,25 @@
             <!-- Dynamically loaded -->
         </div>
     </section>
+
     <!-- Chat Popup Definition -->
     <div id="maia-chat-popup" class="maia-chat-popup hidden">
         <div class="maia-chat-header">
             <span>M.A.I.A. Chat</span>
             <button class="close-chat" aria-label="Close Chat">&times;</button>
         </div>
-    <div id="chat-log" class="maia-chat-log"></div>
+        <div id="chat-log" class="maia-chat-log"></div>
         <div class="maia-chat-input">
             <input type="text" id="chat-input" placeholder="Type your question...">
             <button id="chat-send-btn">Send</button>
+        </div>
+        <!-- File Upload Form -->
+        <div id="file-upload">
+            <form id="upload-form" enctype="multipart/form-data">
+                <input type="file" id="file-input" name="file" accept=".txt,.pdf,.docx,.jpg,.png,.jpeg">
+                <button type="button" id="upload-button">Upload File</button>
+            </form>
+            <div id="upload-feedback"></div>
         </div>
     </div>
 

@@ -1,6 +1,3 @@
-# Filename: main.py
-# Location: root folder
-
 import os
 import sys
 import logging
@@ -75,15 +72,11 @@ except Exception as e:
 
 # Initialize Core Services
 try:
-    # Load Neo4j credentials
     neo4j_uri = CONFIG.get("NEO4J_URI")
     neo4j_user = CONFIG.get("NEO4J_USER")
     neo4j_password = CONFIG.get("NEO4J_PASSWORD")
 
-    # Initialize Neo4j Connector
     neo4j = Neo4jConnector(neo4j_uri, neo4j_user, neo4j_password)
-
-    # Initialize other services
     memory_engine = MemoryEngine(neo4j)
     response_gen = ResponseGenerator(memory_engine, neo4j)
     file_parser = FileParser()
@@ -98,15 +91,12 @@ try:
     consciousness_engine = ConsciousnessEngine(memory_engine, emotion_engine)
     intent_detector = IntentDetector()
 
-    # Conversation Engine
     conversation_engine = ConversationEngine(
-        memory_engine, 
-        response_gen, 
-        None, 
+        memory_engine,
+        response_gen,
+        None,
         context_search_engine
     )
-
-    # Self-Initiated Conversation
     self_initiated_conversation = SelfInitiatedConversation(memory_engine, conversation_engine, None)
 
     logger.info("[INIT SUCCESS] All services initialized successfully.")
@@ -114,7 +104,7 @@ except Exception as e:
     logger.critical(f"[INIT FAILED] Failed to initialize services: {e}", exc_info=True)
     sys.exit(1)
 
-# Manual Cache for Gallery Images
+# Cache for Gallery Images
 gallery_cache = {}
 
 @lru_cache(maxsize=100)
@@ -226,8 +216,6 @@ def ask_maia():
             return jsonify({"message": "Invalid input.", "status": "error"}), 400
 
         question = data['question']
-
-        # Generate response using NLP engine
         intent = nlp_engine.detect_intent(question)
         response, _ = nlp_engine.process(question)
         

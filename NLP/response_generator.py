@@ -3,7 +3,7 @@ import logging
 from typing import Dict, List
 from NLP.contextual_intent_detector import ContextualIntentDetector
 from core.neo4j_connector import Neo4jConnector
-from core.memory_engine import MemoryEngine  # Assuming this is the correct import for your MemoryEngine
+from core.memory_engine import MemoryEngine
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -31,50 +31,36 @@ class ResponseGenerator:
         :param intent: The detected intent of the user's input.
         :param context: Additional context for framing the response.
         :return: A string response rich in language and tailored to the user's situation.
-        :raises KeyError: If required keys are missing from the memory dictionary.
-
-        This method crafts responses with greater engagement, using emotional detection, 
-        personalized greetings, and context-aware statements.
         """
         try:
-            # Detect or update emotions based on the input
+            # Detect or update emotions
             if "emotions" not in memory or not memory["emotions"]:
                 detected_emotions = self.memory_engine.search_memory(memory["text"])
                 if detected_emotions:
                     memory["emotions"] = detected_emotions.get("emotions", ["neutral"])
                 else:
-                    # Use intent to infer emotion if no stored data
                     emotion_intent = self.intent_detector.detect_intent(memory["text"])
                     memory["emotions"] = ["happy"] if emotion_intent == "emotion_positive" else ["neutral"]
-                logger.info(f"[EMOTION DETECTION] Detected or used default emotions: {memory['emotions']} for text: {memory['text'][:50]}{'...' if len(memory['text']) > 50 else ''}")
+                logger.info(f"[EMOTION DETECTION] Detected emotions: {memory['emotions']} for text: {memory['text']}")
 
-            # Personalized Greetings and Reflections
             greeting_variations = [
-                f"Hello {user_name}, I sense your {', '.join(memory['emotions'])} feelings when thinking about '{memory['text']}'.",
-                f"{user_name}, your thoughts on '{memory['text']}' evoke a sense of {', '.join(memory['emotions'])}."
+                f"Hello {user_name}, I sense your {', '.join(memory['emotions'])} feelings about '{memory['text']}'.",
+                f"{user_name}, reflecting on '{memory['text']}' evokes a sense of {', '.join(memory['emotions'])}."
             ]
 
-            # Deep Reflections or Questions based on Intent and Context
             reflective_questions = {
                 "greeting": ["How's your day going?", "What brings you here today?"],
-                "negation": ["I understand you're not in agreement. Would you like to discuss something else?", "What would you rather talk about?"],
-                "confirmation": ["Great to hear we're on the same page. What's next?", "I'm glad we agree. Any further thoughts?"],
-                "emotion": [f"I see you're feeling {memory['emotions'][0]}. Want to share more?", "Your emotional state seems to be {memory['emotions'][0]}. How can I assist?"],
-                "default": ["Tell me more about this, " + user_name, "Is there anything specific you want to discuss?"]
+                "emotion_positive": ["I see you're feeling good. Want to share more?", "You're in a positive mood! What's happening?"],
+                "emotion_negative": ["I notice some tough emotions here. What's on your mind?", "Feeling down? Let's talk about it."],
+                "default": ["Tell me more, " + user_name, "Is there something specific you'd like to discuss?"]
             }
 
-            # Choose the appropriate reflection or question based on intent
             selected_question = random.choice(reflective_questions.get(intent, reflective_questions["default"]))
-            
-            # Combine greeting with context-aware questions
             final_response = f"{random.choice(greeting_variations)} {selected_question} In the context of {context}, what are your thoughts?"
-            
-            logger.info(f"[GENERATED RESPONSE] {final_response[:100]}{'...' if len(final_response) > 100 else ''}")
+
+            logger.info(f"[GENERATED RESPONSE] {final_response}")
             return final_response
 
-        except KeyError as ke:
-            logger.error(f"[RESPONSE GENERATION ERROR] Missing key in memory dict: {ke}")
-            return f"I'm having trouble processing that thought, {user_name}. Please try again."
         except Exception as e:
             logger.error(f"[RESPONSE GENERATION ERROR] {e}", exc_info=True)
-            return f"Something unexpected happened while crafting your response, {user_name}. Please try again."
+            return f"Sorry, {user_name}, I encountered an issue generating your response."

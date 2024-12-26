@@ -21,6 +21,12 @@ h1, h2, h3, p {
     text-align: center;
 }
 
+/* Accessibility Enhancements */
+button:focus, a:focus {
+    outline: 2px solid #00d8ff;
+    outline-offset: 2px;
+}
+
 /* Navbar */
 .navbar {
     background: #23252b;
@@ -120,6 +126,7 @@ h1, h2, h3, p {
     font-size: 0.9em;
     background: #1a1e26;
     color: #f4f4f4;
+    scroll-behavior: smooth;
 }
 
 .maia-chat-log .maia-message.typing {
@@ -186,6 +193,24 @@ h1, h2, h3, p {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     cursor: pointer;
+    position: relative;
+}
+
+#gallery-container img::after {
+    content: attr(alt);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    background: rgba(0, 0, 0, 0.7);
+    color: #f4f4f4;
+    padding: 0.5em;
+    width: 100%;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+#gallery-container img:hover::after {
+    opacity: 1;
 }
 
 #gallery-container img:hover {
@@ -193,6 +218,41 @@ h1, h2, h3, p {
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
 }
 
+/* Light Theme Support */
+body.light-theme {
+    background-color: #f4f4f4;
+    color: #1a1e26;
+}
+
+.light-theme .navbar {
+    background: #ffffff;
+    color: #1a1e26;
+}
+
+.light-theme .cta-btn {
+    background: #23252b;
+    color: #f4f4f4;
+}
+
+.light-theme .maia-chat-popup {
+    background: #ffffff;
+    color: #23252b;
+}
+
 .hidden {
     display: none;
+}
+
+/* Responsive Enhancements */
+@media (max-width: 600px) {
+    .navbar {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .maia-chat-popup {
+        width: 90%;
+        bottom: 10px;
+        right: 5%;
+    }
 }

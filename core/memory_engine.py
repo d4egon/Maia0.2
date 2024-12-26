@@ -71,7 +71,7 @@ class MemoryEngine:
             RETURN node.text AS text, node.pleasure AS pleasure, node.arousal AS arousal, node.retrieval_count AS retrieval_count, score
             ORDER BY score DESC LIMIT 1
             """
-            params = {"text": wrapped_text}
+            params = {"text": wrapped_text[:900]}  # Truncate to avoid exceeding limits
             result = self.db.run_query(query, params)
 
             if result:
@@ -81,7 +81,7 @@ class MemoryEngine:
                 return memory
             else:
                 logger.warning(f"[SEARCH MISS] No memory found for: {sanitized_text}")
-                # Auto-store missing memory
+                # Optionally store missing memory
                 self.store_memory(text)
                 return None
 
@@ -90,97 +90,106 @@ class MemoryEngine:
             return None
 
     def store_memory(self, text: str, emotions: Optional[List[str]] = None, extra_properties: Optional[Dict] = None, pleasure: float = 0.5, arousal: float = 0.5):
-        """Store memory in Neo4j with contextual and emotional data."""
+        """
+        Store memory in Neo4j with contextual and emotional data, handling large texts by chunking and truncating for queries.
+        """
         sanitized_text = self.clean_text(text.lower())
-        wrapped_text = self.prepare_query_text(sanitized_text)
         emotions = emotions or ["neutral"]
         timestamp = datetime.now().isoformat()
 
-        if not wrapped_text:
-            logger.warning(f"[EMPTY QUERY] Skipping storage for empty sanitized text.")
+        if not sanitized_text.strip():
+            logger.warning("[EMPTY MEMORY] Skipping storage for empty text.")
             return
 
+        # Define chunk size for storage
+        chunk_size = 1000
+        chunks = [sanitized_text[i:i + chunk_size] for i in range(0, len(sanitized_text), chunk_size)]
+
         try:
-            # Check for similar memories
-            query_similarity = """
-            CALL db.index.fulltext.queryNodes('memoryIndex', $text) YIELD node, score
-            WHERE score >= 0.7
-            RETURN node.text AS existing_text, node.pleasure AS existing_pleasure, node.arousal AS existing_arousal, node.retrieval_count AS existing_retrieval_count, score
-            ORDER BY score DESC LIMIT 1
-            """
-            params_similarity = {"text": sanitized_text}
-            result_similarity = self.db.run_query(query_similarity, params_similarity)
+            for index, chunk in enumerate(chunks, start=1):
+                logger.info(f"[CHUNK PROCESSING] Processing chunk {index}/{len(chunks)}.")
 
-            if result_similarity and result_similarity[0]['score'] >= 0.7:
-                similar_text = result_similarity[0]['existing_text']
-                similarity_score = result_similarity[0]['score']
+                # Truncate chunk for query
+                truncated_chunk = chunk[:900]  # Safe limit for Neo4j queries
 
-                query_linking = """
-                MATCH (m1:Memory {text: $similar_text})
-                MERGE (m2:Memory {text: $new_text})
-                ON CREATE SET 
-                    m2.created_at = COALESCE($timestamp, datetime()),
-                    m2.pleasure = $pleasure,
-                    m2.arousal = $arousal,
-                    m2.retrieval_count = 0,
-                    m2.emotions = $emotions
-                MERGE (m1)-[:SIMILAR_TO {score: $similarity_score}]->(m2)
-                WITH m2
-                UNWIND $emotions AS emotion
-                MERGE (e:Emotion {name: emotion})
-                MERGE (m2)-[:EMOTION_OF]->(e)
-                RETURN m2.text AS memory_text, COUNT(m2) > 0 AS new_memory
+                # Check for similar memories
+                query_similarity = """
+                CALL db.index.fulltext.queryNodes('memoryIndex', $text) YIELD node, score
+                WHERE score >= 0.7
+                RETURN node.text AS existing_text, node.pleasure AS existing_pleasure,
+                       node.arousal AS existing_arousal, node.retrieval_count AS existing_retrieval_count, score
+                ORDER BY score DESC LIMIT 1
                 """
-                params_linking = {
-                    "similar_text": similar_text,
-                    "new_text": sanitized_text,
-                    "timestamp": timestamp,
-                    "pleasure": pleasure,
-                    "arousal": arousal,
-                    "emotions": emotions,
-                    "similarity_score": similarity_score
-                }
+                params_similarity = {"text": truncated_chunk}
+                result_similarity = self.db.run_query(query_similarity, params_similarity)
 
-                result_linking = self.db.run_query(query_linking, params_linking)
-                logger.info(f"[LINKED MEMORY] New memory '{text}' linked to '{similar_text}' with similarity {similarity_score}.")
-            else:
-                # Store new memory with emotions
-                query_store = """
-                MERGE (m:Memory {text: $text})
-                ON CREATE SET 
-                    m.created_at = COALESCE($timestamp, datetime()),
-                    m.pleasure = $pleasure,
-                    m.arousal = $arousal,
-                    m.retrieval_count = 0,
-                    m.emotions = $emotions
-                WITH m
-                UNWIND $emotions AS emotion
-                MERGE (e:Emotion {name: emotion})
-                MERGE (m)-[:EMOTION_OF]->(e)
-                RETURN m.text AS memory_text, COUNT(m) > 0 AS new_memory
-                """
-                params_store = {
-                    "text": sanitized_text,
-                    "timestamp": timestamp,
-                    "pleasure": pleasure,
-                    "arousal": arousal,
-                    "emotions": emotions,
-                }
+                if result_similarity and result_similarity[0]['score'] >= 0.7:
+                    # Link to similar memory
+                    similar_text = result_similarity[0]['existing_text']
+                    similarity_score = result_similarity[0]['score']
 
-                result_store = self.db.run_query(query_store, params_store)
-                if result_store and result_store[0].get("new_memory"):
-                    logger.info(f"[NEW MEMORY STORED] '{text}' saved in Neo4j.")
+                    query_linking = """
+                    MATCH (m1:Memory {text: $similar_text})
+                    MERGE (m2:Memory {text: $new_text})
+                    ON CREATE SET 
+                        m2.created_at = COALESCE($timestamp, datetime()),
+                        m2.pleasure = $pleasure,
+                        m2.arousal = $arousal,
+                        m2.retrieval_count = 0,
+                        m2.emotions = $emotions,
+                        m2.chunk_index = $chunk_index,
+                        m2.source = $source,
+                        m2.type = $type
+                    MERGE (m1)-[:SIMILAR_TO {score: $similarity_score}]->(m2)
+                    """
+                    params_linking = {
+                        "similar_text": similar_text,
+                        "new_text": chunk,
+                        "timestamp": timestamp,
+                        "pleasure": pleasure,
+                        "arousal": arousal,
+                        "emotions": emotions,
+                        "similarity_score": similarity_score,
+                        "chunk_index": index,
+                        "source": extra_properties.get("source", "unknown"),
+                        "type": extra_properties.get("type", "file_upload"),
+                    }
+                    self.db.run_query(query_linking, params_linking)
                 else:
-                    logger.info(f"[EXISTING MEMORY MATCHED] '{text}' already exists in Neo4j.")
+                    # Store new memory
+                    query_store = """
+                    MERGE (m:Memory {text: $text})
+                    ON CREATE SET 
+                        m.created_at = COALESCE($timestamp, datetime()),
+                        m.pleasure = $pleasure,
+                        m.arousal = $arousal,
+                        m.retrieval_count = 0,
+                        m.emotions = $emotions,
+                        m.chunk_index = $chunk_index,
+                        m.source = $source,
+                        m.type = $type
+                    """
+                    params_store = {
+                        "text": chunk,
+                        "timestamp": timestamp,
+                        "pleasure": pleasure,
+                        "arousal": arousal,
+                        "emotions": emotions,
+                        "chunk_index": index,
+                        "source": extra_properties.get("source", "unknown"),
+                        "type": extra_properties.get("type", "file_upload"),
+                    }
+                    self.db.run_query(query_store, params_store)
 
-            self.memory_cache[sanitized_text] = {
-                "text": text,
-                "emotions": emotions,
-                "pleasure": pleasure,
-                "arousal": arousal,
-                "timestamp": timestamp,
-            }
-            logger.info(f"[CACHE UPDATE] Stored in cache: {sanitized_text}")
+                # Update memory cache
+                self.memory_cache[chunk] = {
+                    "text": chunk,
+                    "emotions": emotions,
+                    "pleasure": pleasure,
+                    "arousal": arousal,
+                    "timestamp": timestamp,
+                    "chunk_index": index,
+                }
 
         except Exception as e:
             logger.error(f"[MEMORY STORAGE FAILED] Unable to store memory '{text}': {e}", exc_info=True)

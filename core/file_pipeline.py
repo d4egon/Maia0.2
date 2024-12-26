@@ -1,5 +1,6 @@
-# Filename: /web_server/file_pipeline.py
-
+import logging
+import mimetypes
+import os
 from config.settings import CONFIG
 from core.neo4j_connector import Neo4jConnector
 from core.memory_engine import MemoryEngine
@@ -7,9 +8,6 @@ from core.file_parser import FileParser
 from audio_feature_extractor import extract_features
 from signal_classifier import train_classifier
 import numpy as np
-import logging
-import mimetypes
-import os
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -17,7 +15,9 @@ logger = logging.getLogger(__name__)
 
 class FilePipeline:
     def __init__(self):
-        # Initialize Core Components
+        """
+        Initialize FilePipeline with core components for file processing.
+        """
         try:
             self.neo4j = Neo4jConnector(
                 CONFIG["NEO4J_URI"],
@@ -33,9 +33,12 @@ class FilePipeline:
             raise
 
     def process_file(self, filepath):
+        """
+        Process a generic file based on its type.
+        """
         filename = os.path.basename(filepath)
 
-        # Handle Mycelium Audio Files
+        # Special handling for Mycelium Audio
         if filename.lower().startswith("mycelium_") and filename.lower().endswith(".wav"):
             return self.process_mycelium_audio(filepath)
 
@@ -44,16 +47,16 @@ class FilePipeline:
             mime_type, _ = mimetypes.guess_type(filepath)
             if not mime_type:
                 raise ValueError("Could not determine file MIME type.")
-            logger.info(f"[VALIDATION] File MIME type validated: {mime_type}")
+            logger.info(f"[VALIDATION] MIME type validated: {mime_type}")
 
             # Parse File Content
             content = self.file_parser.parse(filepath)
             if not content.strip():
                 raise ValueError("Parsed content is empty.")
-            logger.info(f"[PARSING] File content parsed successfully ({len(content)} characters).")
+            logger.info(f"[PARSING] Successfully parsed file content ({len(content)} characters).")
 
-            # Analyze Content and Store Memory
-            emotion = "neutral"  # Placeholder for future emotion analysis integration
+            # Analyze and Store Memory
+            emotion = "neutral"  # Placeholder for future emotion detection integration
             self.memory_engine.store_memory(content, emotion)
 
             logger.info(f"[MEMORY] File '{filename}' stored in memory with emotion '{emotion}'.")
@@ -72,8 +75,7 @@ class FilePipeline:
 
     def process_mycelium_audio(self, audio_file):
         """
-        Process audio files starting with 'Mycelium_'.
-        Extract features, classify, and store them in memory.
+        Process Mycelium audio files for feature extraction and classification.
         """
         try:
             features = extract_features(audio_file)
@@ -110,4 +112,4 @@ class FilePipeline:
             }
         except Exception as e:
             logger.error(f"[ERROR] Failed to process Mycelium audio file '{audio_file}': {e}", exc_info=True)
-            return {"message": f"Error processing audio file: {str(e)}", "status": "error"}
+            return {"message": f"Error processing audio file: {e}", "status": "error"}

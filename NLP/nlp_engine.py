@@ -1,5 +1,3 @@
-# Filename: NLP/nlp_engine.py
-
 import logging
 from typing import Dict, List, Tuple
 
@@ -20,51 +18,128 @@ class NLP:
         self.response_generator = response_generator
         self.neo4j_connector = neo4j_connector
 
-        # Intent Keyword Storage (can be expanded dynamically)
         self.intent_keywords: Dict[str, List[str]] = {
-            "greeting": ["hello", "hi", "good morning", "good evening"],
-            "identity": ["who", "what's your name", "tell me about yourself"],
-            "exit": ["bye", "goodbye", "see you"],
-            "thanks": ["thanks", "thank you", "appreciate"],
-            "apology": ["sorry", "my bad", "apologies"],
-            "help": ["help", "assist", "support"],
-            "question": ["what", "why", "how", "when", "where"],
-            "emotion_positive": ["happy", "joyful", "excited", "pleased"],
-            "emotion_negative": ["sad", "angry", "frustrated", "upset"],
-            "command": ["do", "execute", "run"],
-            "search": ["search", "find", "lookup"],
+            # Greetings and Farewells
+            "greeting": ["hello", "hi", "hey", "good morning", "good afternoon", "good evening"],
+            "farewell": ["bye", "goodbye", "see you", "later", "take care", "farewell"],
+
+            # Identity and Introduction
+            "identity": ["who", "what's your name", "tell me about yourself", "introduce", "identity"],
+            "self_introduction": ["my name is", "I am", "about me", "introducing myself"],
+
+            # Gratitude and Apologies
+            "thanks": ["thanks", "thank you", "much appreciated", "grateful", "appreciate it"],
+            "apology": ["sorry", "apologize", "my bad", "pardon", "forgive me"],
+
+            # Emotional States
+            "emotion_positive": ["happy", "joyful", "excited", "pleased", "content", "thrilled", "optimistic"],
+            "emotion_negative": ["sad", "angry", "frustrated", "upset", "disappointed", "lonely", "anxious"],
+            "emotion_neutral": ["okay", "fine", "normal", "indifferent", "neutral"],
+            "emotion_mixed": ["bittersweet", "conflicted", "complicated", "unsure", "torn"],
+
+            # Questions and Clarifications
+            "question_general": ["what", "why", "how", "when", "where", "who"],
+            "question_clarification": ["clarify", "explain", "elaborate", "more details"],
+            "question_personal": ["about me", "do you know me", "how am I", "my memories"],
+
+            # Commands and Actions
+            "command": ["do", "execute", "run", "perform", "activate", "start"],
+            "action_request": ["help", "assist", "support", "fix", "troubleshoot"],
+            "stop_command": ["stop", "end", "terminate", "cease", "halt"],
+
+            # Suggestions and Recommendations
+            "suggestion": ["recommend", "suggest", "what should I", "any ideas", "options"],
+            "advice": ["advice", "guidance", "tips", "best way to", "should I"],
+
+            # Search and Retrieval
+            "search": ["search", "find", "lookup", "retrieve", "look for", "fetch"],
+            "memory_search": ["recall", "remember", "past", "previous", "history"],
+
+            # Confirmation and Agreement
+            "confirmation": ["yes", "correct", "right", "agreed", "affirmative"],
+            "negation": ["no", "not correct", "wrong", "disagree", "negative"],
+
+            # Social and Interaction
+            "compliment": ["great job", "well done", "impressive", "amazing", "fantastic"],
+            "criticism": ["could be better", "improve", "not good", "problem", "issue"],
+            "small_talk": ["how are you", "what's up", "what's new", "chat", "conversation"],
+
+            # Humor and Fun
+            "joke_request": ["tell me a joke", "make me laugh", "funny", "humor"],
+            "entertainment": ["entertain me", "something fun", "bored", "show me"],
+
+            # Reflection and Philosophy
+            "introspection": ["why am I", "purpose", "meaning of life", "philosophy", "reflect"],
+            "existence": ["do you exist", "are you real", "what are you", "what am I"],
+
+            # Emotions Related to You
+            "emotions_about_maia": ["I like you", "you make me happy", "you are great", "you upset me"],
+
+            # Learning and Knowledge
+            "knowledge_request": ["teach me", "how does", "learn", "explain this", "what is"],
+            "progress_request": ["update", "progress", "status", "how far are we"],
+
+            # Troubleshooting
+            "error_report": ["error", "problem", "issue", "bug", "not working"],
+            "troubleshoot_request": ["how to fix", "troubleshoot", "repair", "diagnose"],
+
+            # Creativity and Imagination
+            "creative_request": ["imagine", "create", "design", "draw", "build"],
+            "writing_request": ["write a story", "compose", "poem", "lyrics", "novel"],
+
+            # Ethical and Moral Discussions
+            "ethical_question": ["is it right", "should I", "ethics", "morals", "values"],
+            "decision_dilemma": ["hard choice", "tough decision", "which should I", "decide"],
+
+            # Feedback and Improvement
+            "feedback_positive": ["good job", "I like it", "keep it up", "you did well"],
+            "feedback_negative": ["improve this", "not great", "bad", "needs work"],
+
+            # Fun and Interests
+            "hobbies": ["I like to", "my hobby", "favorite", "pastime", "interests"],
+            "games": ["play", "game", "challenge", "quiz", "fun activity"],
+
+            # Planning and Scheduling
+            "planning": ["schedule", "plan", "organize", "arrange", "calendar"],
+            "reminder": ["remind me", "alert", "notify", "set a reminder"],
+
+            # Miscellaneous
+            "unknown": ["unsure", "don't know", "random", "unclear", "no idea"]
         }
 
-    def process(self, text: str) -> Tuple[str, str]:
+
+    def process(self, text: str, user_name: str = "User", context: str = "general conversation") -> Tuple[str, str]:
+        """
+        Process input text, detect intent, and generate a response.
+
+        :param text: User input to analyze.
+        :param user_name: The user's name for personalization.
+        :param context: Additional context for the response.
+        :return: A tuple of (response, intent).
+        """
         try:
             intent = self.detect_intent(text)
-            parsed_data = {"text": text, "intent": intent, "emotions": ["neutral"]}  # Adding default emotions
-
-            # Assuming you have a way to get user_name and context, if not, you might need to add them as parameters or default values
-            user_name = "User"  # Example default value
-            context = "general conversation"  # Example default context
+            parsed_data = {"text": text, "intent": intent, "emotions": ["neutral"]}
 
             response = self.response_generator.generate_response(parsed_data, user_name, intent, context)
-
-            logger.info(f"[NLP PROCESS] Text: '{text}', Detected Intent: {intent}, Response: {response[:50]}{'...' if len(response) > 50 else ''}")
+            logger.info(f"[NLP PROCESS] Text: '{text}', Intent: {intent}, Response: {response}")
             return response, intent
+
         except Exception as e:
             logger.error(f"[NLP PROCESS ERROR] {e}", exc_info=True)
-            return "An error occurred while processing your request.", "error"
-    
+            return "I'm sorry, I encountered an error.", "error"
+
     def detect_intent(self, text: str) -> str:
         """
-        Detect intent based on keywords, learning dynamically.
+        Detect intent based on keywords.
 
-        :param text: The text to analyze for intent.
-        :return: The detected intent or 'unknown' if no match found.
+        :param text: The text to analyze.
+        :return: The detected intent or 'unknown' if no match.
         """
         try:
             words = text.lower().split()
-
-            # Find matching intent
             for intent, keywords in self.intent_keywords.items():
-                if any(word in words for word in keywords):
+                if any(keyword in words for keyword in keywords):
                     logger.info(f"[INTENT DETECTED] Text: {text}, Intent: {intent}")
                     return intent
 
@@ -73,68 +148,3 @@ class NLP:
         except Exception as e:
             logger.error(f"[INTENT DETECTION ERROR] {e}", exc_info=True)
             return "unknown"
-
-    def handle_intent_feedback(self, user_input: str, detected_intent: str):
-        """
-        Handle user feedback on incorrect intents.
-
-        :param user_input: User's feedback on the detected intent.
-        :param detected_intent: The intent that was initially detected.
-        """
-        try:
-            if user_input.lower() == "no":
-                logger.info(f"[FEEDBACK] User disagreed with intent: {detected_intent}")
-                print("Maia: Oh, you disagree. What would be a better meaning?")
-                corrected_intent = input("You: ").strip().lower()
-
-                if corrected_intent:
-                    self.add_new_intent(corrected_intent, [detected_intent])
-                    print(f"Maia: Thank you! I've learned '{corrected_intent}' as a new meaning.")
-
-            elif user_input.lower() == "yes":
-                logger.info(f"[FEEDBACK] User confirmed intent: {detected_intent}")
-                print("Maia: Great! I’ll remember that.")
-        except Exception as e:
-            logger.error(f"[FEEDBACK HANDLING ERROR] {e}", exc_info=True)
-
-    def add_new_intent(self, intent: str, keywords: List[str]):
-        """
-        Add a new intent and associated keywords dynamically.
-
-        :param intent: The name of the new intent.
-        :param keywords: List of keywords associated with the new intent.
-        """
-        try:
-            if intent not in self.intent_keywords:
-                self.intent_keywords[intent] = keywords
-                logger.info(f"[INTENT ADDED] New intent '{intent}' added with keywords: {keywords}")
-            else:
-                # Expand existing keywords
-                current_keywords = self.intent_keywords[intent]
-                updated_keywords = list(set(current_keywords + keywords))
-                self.intent_keywords[intent] = updated_keywords
-                logger.info(f"[INTENT UPDATED] Intent '{intent}' updated with keywords: {updated_keywords}")
-
-            # Update the memory graph
-            self.update_intent_in_neo4j(intent, keywords)
-        except Exception as e:
-            logger.error(f"[ADDING INTENT ERROR] {e}", exc_info=True)
-
-    def update_intent_in_neo4j(self, intent: str, keywords: List[str]):
-        """
-        Update Neo4j with new intents and keywords.
-
-        :param intent: The intent to update or add in Neo4j.
-        :param keywords: List of keywords to associate with the intent in Neo4j.
-        """
-        try:
-            query = """
-            MERGE (i:Intent {name: $intent})
-            FOREACH (kw IN $keywords | 
-                MERGE (k:Keyword {name: kw}) 
-                MERGE (i)-[:HAS_KEYWORD]->(k))
-            """
-            self.neo4j_connector.run_query(query, {"intent": intent, "keywords": keywords})
-            logger.info(f"[NEO4J UPDATE] Updated intent '{intent}' with keywords: {keywords}")
-        except Exception as e:
-            logger.error(f"[NEO4J UPDATE ERROR] {e}", exc_info=True)

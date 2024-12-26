@@ -1,12 +1,18 @@
-
 import logging
-
+import mimetypes
+import os
+from PyPDF2 import PdfReader
+import pytesseract
+import speech_recognition as sr
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 class FileParser:
     def parse(self, filepath):
+        """
+        Parse a file based on its MIME type.
+        """
         if not os.path.exists(filepath):
             raise FileNotFoundError(f"File not found: {filepath}")
 
@@ -25,6 +31,9 @@ class FileParser:
             raise ValueError(f"Unsupported file type: {mime_type}")
 
     def parse_text(self, filepath):
+        """
+        Parse plain text files.
+        """
         try:
             with open(filepath, "r", encoding="utf-8") as file:
                 content = file.read()
@@ -34,15 +43,23 @@ class FileParser:
             raise
 
     def parse_pdf(self, filepath):
+        """
+        Extract text from PDF files.
+        """
         try:
             reader = PdfReader(filepath)
-            content = "".join([page.extract_text() for page in reader.pages if page])
+            content = "".join([page.extract_text() for page in reader.pages if page.extract_text()])
+            if not content.strip():
+                raise ValueError("PDF content extraction failed or is empty.")
             return content
         except Exception as e:
             logger.error(f"Failed to parse PDF: {e}")
-            raise
+            raise ValueError("PDF parsing failed.")
 
     def parse_image(self, filepath):
+        """
+        Extract text from images using OCR.
+        """
         try:
             content = pytesseract.image_to_string(filepath)
             return content
@@ -51,6 +68,9 @@ class FileParser:
             raise
 
     def parse_audio(self, filepath):
+        """
+        Transcribe audio files into text.
+        """
         try:
             recognizer = sr.Recognizer()
             with sr.AudioFile(filepath) as source:
