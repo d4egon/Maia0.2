@@ -91,40 +91,40 @@ class MemoryEngine:
 
     def store_memory(self, text: str, emotions: Optional[List[str]] = None, extra_properties: Optional[Dict] = None, pleasure: float = 0.5, arousal: float = 0.5):
         """
-        Store memory in Neo4j with contextual and emotional data, handling large texts by chunking and truncating for queries.
+        Store memory in Neo4j with contextual and emotional data, handling large texts by chunking and sanitizing input.
         """
         sanitized_text = self.clean_text(text.lower())
         emotions = emotions or ["neutral"]
         timestamp = datetime.now().isoformat()
 
-        if not sanitized_text.strip():
-            logger.warning("[EMPTY MEMORY] Skipping storage for empty text.")
+        if not sanitized_text:
+            logger.warning(f"[EMPTY QUERY] Skipping storage for empty sanitized text.")
             return
 
-        # Define chunk size for storage
-        chunk_size = 1000
+        # Define chunk size for storage and truncation size for queries
+        chunk_size = 900  # Maximum query length Neo4j allows with safety margin
         chunks = [sanitized_text[i:i + chunk_size] for i in range(0, len(sanitized_text), chunk_size)]
 
         try:
             for index, chunk in enumerate(chunks, start=1):
                 logger.info(f"[CHUNK PROCESSING] Processing chunk {index}/{len(chunks)}.")
 
-                # Truncate chunk for query
-                truncated_chunk = chunk[:900]  # Safe limit for Neo4j queries
+                # Escape special characters in chunk to avoid parser errors
+                escaped_chunk = re.sub(r'([:+\-~<>])', r'\\\1', chunk)
 
-                # Check for similar memories
+                # Check for similar memories using the escaped and truncated text
                 query_similarity = """
                 CALL db.index.fulltext.queryNodes('memoryIndex', $text) YIELD node, score
                 WHERE score >= 0.7
                 RETURN node.text AS existing_text, node.pleasure AS existing_pleasure,
-                       node.arousal AS existing_arousal, node.retrieval_count AS existing_retrieval_count, score
+                    node.arousal AS existing_arousal, node.retrieval_count AS existing_retrieval_count, score
                 ORDER BY score DESC LIMIT 1
                 """
-                params_similarity = {"text": truncated_chunk}
+                params_similarity = {"text": escaped_chunk}
                 result_similarity = self.db.run_query(query_similarity, params_similarity)
 
                 if result_similarity and result_similarity[0]['score'] >= 0.7:
-                    # Link to similar memory
+                    # Link chunk to similar memory
                     similar_text = result_similarity[0]['existing_text']
                     similarity_score = result_similarity[0]['score']
 
@@ -141,6 +141,11 @@ class MemoryEngine:
                         m2.source = $source,
                         m2.type = $type
                     MERGE (m1)-[:SIMILAR_TO {score: $similarity_score}]->(m2)
+                    WITH m2
+                    UNWIND $emotions AS emotion
+                    MERGE (e:Emotion {name: emotion})
+                    MERGE (m2)-[:EMOTION_OF]->(e)
+                    RETURN m2.text AS memory_text, COUNT(m2) > 0 AS new_memory
                     """
                     params_linking = {
                         "similar_text": similar_text,
@@ -154,9 +159,11 @@ class MemoryEngine:
                         "source": extra_properties.get("source", "unknown"),
                         "type": extra_properties.get("type", "file_upload"),
                     }
-                    self.db.run_query(query_linking, params_linking)
+
+                    result_linking = self.db.run_query(query_linking, params_linking)
+                    logger.info(f"[LINKED MEMORY] Chunk {index}/{len(chunks)} linked to '{similar_text}' with similarity {similarity_score}.")
                 else:
-                    # Store new memory
+                    # Store as a new memory
                     query_store = """
                     MERGE (m:Memory {text: $text})
                     ON CREATE SET 
@@ -168,6 +175,11 @@ class MemoryEngine:
                         m.chunk_index = $chunk_index,
                         m.source = $source,
                         m.type = $type
+                    WITH m
+                    UNWIND $emotions AS emotion
+                    MERGE (e:Emotion {name: emotion})
+                    MERGE (m)-[:EMOTION_OF]->(e)
+                    RETURN m.text AS memory_text, COUNT(m) > 0 AS new_memory
                     """
                     params_store = {
                         "text": chunk,
@@ -179,9 +191,14 @@ class MemoryEngine:
                         "source": extra_properties.get("source", "unknown"),
                         "type": extra_properties.get("type", "file_upload"),
                     }
-                    self.db.run_query(query_store, params_store)
 
-                # Update memory cache
+                    result_store = self.db.run_query(query_store, params_store)
+                    if result_store and result_store[0].get("new_memory"):
+                        logger.info(f"[NEW MEMORY STORED] Chunk {index}/{len(chunks)} saved in Neo4j.")
+                    else:
+                        logger.info(f"[EXISTING MEMORY MATCHED] Chunk {index}/{len(chunks)} already exists in Neo4j.")
+
+                # Update memory cache for each chunk
                 self.memory_cache[chunk] = {
                     "text": chunk,
                     "emotions": emotions,
@@ -190,9 +207,11 @@ class MemoryEngine:
                     "timestamp": timestamp,
                     "chunk_index": index,
                 }
+                logger.info(f"[CACHE UPDATE] Chunk {index}/{len(chunks)} stored in cache.")
 
         except Exception as e:
             logger.error(f"[MEMORY STORAGE FAILED] Unable to store memory '{text}': {e}", exc_info=True)
+
 
     def update_retrieval_stats(self, text: str) -> Optional[Dict]:
         """Update retrieval frequency and adjust pleasure/arousal."""
