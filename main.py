@@ -80,8 +80,8 @@ try:
     neo4j_user = CONFIG.get("NEO4J_USER")
     neo4j_password = CONFIG.get("NEO4J_PASSWORD")
 
-    # Initialize Neo4j Connector with connection pooling
-    neo4j = Neo4jConnector(neo4j_uri, neo4j_user, neo4j_password, max_connection_pool_size=50)
+    # Initialize Neo4j Connector
+    neo4j = Neo4jConnector(neo4j_uri, neo4j_user, neo4j_password)
 
     # Initialize other services
     memory_engine = MemoryEngine(neo4j)

@@ -1,9 +1,13 @@
 from typing import Optional
 from venv import logger
-from core.conversation_engine import ConversationEngine
 
 class CollaborativeLearning:
-    def __init__(self, conversation_engine: ConversationEngine):
+    def __init__(self, conversation_engine):
+        """
+        Initialize CollaborativeLearning with a reference to the ConversationEngine.
+
+        :param conversation_engine: An instance of ConversationEngine.
+        """
         self.conversation_engine = conversation_engine
 
     def detect_doubt(self, thought: str) -> bool:
@@ -24,5 +28,7 @@ class CollaborativeLearning:
         """
         Process user feedback to refine knowledge or behavior.
         """
-        logger.info(f"[COLLABORATIVE LEARNING] User feedback received: {feedback}")
-        self.conversation_engine.process_feedback(feedback)
+        from core.conversation_engine import ConversationEngine  # Lazy import
+        if isinstance(self.conversation_engine, ConversationEngine):
+            logger.info(f"[COLLABORATIVE LEARNING] User feedback received: {feedback}")
+            self.conversation_engine.process_feedback(feedback)

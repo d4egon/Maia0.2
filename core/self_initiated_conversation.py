@@ -1,11 +1,11 @@
 # self_initiated_conversation.py - Autonomous Conversations
-
 import schedule
 import time
 import random
 import threading
 import logging
 from typing import List, Dict
+
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

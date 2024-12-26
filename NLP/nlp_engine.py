@@ -36,23 +36,22 @@ class NLP:
         }
 
     def process(self, text: str) -> Tuple[str, str]:
-        """
-        Process the input text, detect intent, and generate a response.
-
-        :param text: User input text to process.
-        :return: A tuple of (response, intent).
-        """
         try:
             intent = self.detect_intent(text)
-            parsed_data = {"text": text, "intent": intent}
+            parsed_data = {"text": text, "intent": intent, "emotions": ["neutral"]}  # Adding default emotions
 
-            response = self.response_generator.generate(parsed_data, intent, text)
+            # Assuming you have a way to get user_name and context, if not, you might need to add them as parameters or default values
+            user_name = "User"  # Example default value
+            context = "general conversation"  # Example default context
+
+            response = self.response_generator.generate_response(parsed_data, user_name, intent, context)
+
             logger.info(f"[NLP PROCESS] Text: '{text}', Detected Intent: {intent}, Response: {response[:50]}{'...' if len(response) > 50 else ''}")
             return response, intent
         except Exception as e:
             logger.error(f"[NLP PROCESS ERROR] {e}", exc_info=True)
             return "An error occurred while processing your request.", "error"
-
+    
     def detect_intent(self, text: str) -> str:
         """
         Detect intent based on keywords, learning dynamically.

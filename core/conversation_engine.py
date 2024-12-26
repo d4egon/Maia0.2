@@ -1,13 +1,13 @@
 ﻿from venv import logger
 from NLP.response_generator import ResponseGenerator
-from core.collaborative_learning import CollaborativeLearning
 from core.context_search import ContextSearchEngine
 from core.memory_engine import MemoryEngine
 from core.thought_engine import ThoughtEngine
-
+from core.collaborative_learning import CollaborativeLearning
 
 class ConversationEngine:
-    def __init__(self, memory_engine: MemoryEngine, response_generator: ResponseGenerator, thought_engine: ThoughtEngine, context_search: ContextSearchEngine, collaborative_learning: CollaborativeLearning):
+    def __init__(self, memory_engine: MemoryEngine, response_generator: ResponseGenerator,
+                 thought_engine: ThoughtEngine, context_search: ContextSearchEngine):
         """
         Initialize the ConversationEngine with necessary components.
 
@@ -15,13 +15,12 @@ class ConversationEngine:
         :param response_generator: Generates responses based on input.
         :param thought_engine: Processes thoughts or generates new content.
         :param context_search: Searches for relevant context from past interactions.
-        :param collaborative_learning: Handles doubt detection and user collaboration.
         """
         self.memory_engine = memory_engine
         self.response_generator = response_generator
         self.thought_engine = thought_engine
         self.context_search = context_search
-        self.collaborative_learning = collaborative_learning
+        self.collaborative_learning = CollaborativeLearning(self)  # Pass itself as reference
 
     def process_user_input(self, user_input: str) -> str:
         """
