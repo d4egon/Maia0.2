@@ -258,3 +258,47 @@ class MemoryEngine:
         except Exception as e:
             logger.error(f"[RETRIEVE TOP MEMORIES ERROR] {e}", exc_info=True)
             return []
+
+    def cluster_related_memories(self):
+        """
+        Cluster memories based on similarity and themes for better organization.
+    
+        :return: Clustering results.
+        """
+        query = """
+        CALL gds.beta.nodeSimilarity.stream({
+            nodeProjection: 'Memory',
+            relationshipProjection: 'RELATED_TO'
+        })
+        YIELD node1, node2, similarity
+        RETURN gds.util.asNode(node1).text AS memory1, gds.util.asNode(node2).text AS memory2, similarity
+        """
+        try:
+            result = self.db.run_query(query)
+            logger.info(f"[CLUSTERING] Clustered memories: {len(result)} relationships identified.")
+            return result
+        except Exception as e:
+            logger.error(f"[CLUSTERING ERROR] {e}")
+    
+    def multi_dimensional_search(self, query_text: str, emotion_filter: str = None) -> List[Dict]:
+        """
+        Search memories using text, theme, and optional emotion filter.
+    
+        :param query_text: Text to search for.
+        :param emotion_filter: Filter results by emotion if specified.
+        :return: List of matching memories.
+        """
+        try:
+            sanitized_query = self.clean_text(query_text)
+            query = f"""
+            CALL db.index.fulltext.queryNodes('memoryIndex', '{sanitized_query}') YIELD node, score
+            WHERE {f"node.emotion = '{emotion_filter}' AND " if emotion_filter else ""}score > 0.5
+            RETURN node.text AS text, node.theme AS theme, node.emotion AS emotion, score
+            ORDER BY score DESC
+            """
+            result = self.db.run_query(query)
+            logger.info(f"[SEARCH] Found {len(result)} results for query: {query_text}")
+            return result
+        except Exception as e:
+            logger.error(f"[SEARCH ERROR] {e}")
+            return []

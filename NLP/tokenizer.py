@@ -1,22 +1,27 @@
 import re
 import logging
-from typing import List
+from typing import List, Dict
 
 # Configure logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class Tokenizer:
-    def tokenize(self, text: str) -> List[str]:
-        """
-        Tokenize the input text into words and certain punctuation marks.
+    # Define a set of keywords to be tagged during tokenization
+    KEYWORDS = {"grace", "faith", "sin", "redemption", "virtue", "justice", "mercy", "truth", "love", "evil"}
 
-        This method splits the text into tokens where:
-        - Words are considered as sequences of word characters (\w+).
-        - Specific punctuation marks like '.', ',', '!', '?', and ';' are treated as individual tokens.
+    def tokenize(self, text: str) -> List[Dict[str, str]]:
+        """
+        Tokenize the input text into words, numbers, punctuation marks, and specific keywords.
+
+        Tokens are categorized as:
+        - word: Regular words
+        - punctuation: Specific punctuation marks
+        - number: Numerical values
+        - keyword: Predefined theological or ethical terms
 
         :param text: The text string to be tokenized.
-        :return: A list of tokens.
+        :return: A list of dictionaries where each token includes the 'type' and 'value'.
 
         :raises ValueError: If the input text is not a string or is empty.
         """
@@ -24,10 +29,26 @@ class Tokenizer:
             if not isinstance(text, str) or not text.strip():
                 raise ValueError("Input must be a non-empty string.")
 
-            # Use regex to find words and specific punctuation marks
-            tokens = re.findall(r'\b\w+\b|[.,!?;]', text)
-            logger.info(f"[TOKENIZATION] Text '{text[:50]}{'...' if len(text) > 50 else ''}' tokenized into {len(tokens)} tokens.")
-            return tokens
+            # Use regex to find tokens
+            token_patterns = r'\b\w+\b|[.,!?;]|[\d]+(?:\.\d+)?|\b(?:' + '|'.join(self.KEYWORDS) + r')\b'
+            raw_tokens = re.findall(token_patterns, text)
+
+            # Categorize tokens
+            categorized_tokens = []
+            for token in raw_tokens:
+                if token.lower() in self.KEYWORDS:
+                    token_type = "keyword"
+                elif token.isdigit() or re.match(r'^\d+(?:\.\d+)?$', token):
+                    token_type = "number"
+                elif re.match(r'[.,!?;]', token):
+                    token_type = "punctuation"
+                else:
+                    token_type = "word"
+
+                categorized_tokens.append({"type": token_type, "value": token})
+
+            logger.info(f"[TOKENIZATION] Text '{text[:50]}{'...' if len(text) > 50 else ''}' tokenized into {len(categorized_tokens)} categorized tokens.")
+            return categorized_tokens
         except ValueError as ve:
             logger.error(f"[TOKENIZATION ERROR] {ve}")
             raise

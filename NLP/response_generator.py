@@ -20,7 +20,7 @@ class ResponseGenerator:
         """
         self.memory_engine = memory_engine
         self.neo4j_connector = neo4j_connector
-        self.intent_detector = ContextualIntentDetector(neo4j_connector)
+        self.intent_detector = ContextualIntentDetector(memory_engine)
 
     def generate_response(self, memory: Dict, user_name: str, intent: str, context: str) -> str:
         """
@@ -33,30 +33,34 @@ class ResponseGenerator:
         :return: A string response rich in language and tailored to the user's situation.
         """
         try:
-            # Detect or update emotions
-            if "emotions" not in memory or not memory["emotions"]:
-                detected_emotions = self.memory_engine.search_memory(memory["text"])
-                if detected_emotions:
-                    memory["emotions"] = detected_emotions.get("emotions", ["neutral"])
-                else:
-                    emotion_intent = self.intent_detector.detect_intent(memory["text"])
-                    memory["emotions"] = ["happy"] if emotion_intent == "emotion_positive" else ["neutral"]
-                logger.info(f"[EMOTION DETECTION] Detected emotions: {memory['emotions']} for text: {memory['text']}")
+            # Retrieve relevant memories
+            related_memory = self.memory_engine.search_memory(memory["text"])
+            memory_text = related_memory["text"] if related_memory else "no related memory found"
 
-            greeting_variations = [
-                f"Hello {user_name}, I sense your {', '.join(memory['emotions'])} feelings about '{memory['text']}'.",
-                f"{user_name}, reflecting on '{memory['text']}' evokes a sense of {', '.join(memory['emotions'])}."
-            ]
+            # Base response components
+            base_greeting = f"Hello {user_name}, "
+            emotion_phrase = f"I sense your {', '.join(memory.get('emotions', ['neutral']))} feelings. "
+            memory_phrase = f"I recall something: '{memory_text}'. " if related_memory else "This seems new to me. "
 
-            reflective_questions = {
+            # Intent-specific responses
+            intent_responses = {
                 "greeting": ["How's your day going?", "What brings you here today?"],
-                "emotion_positive": ["I see you're feeling good. Want to share more?", "You're in a positive mood! What's happening?"],
-                "emotion_negative": ["I notice some tough emotions here. What's on your mind?", "Feeling down? Let's talk about it."],
-                "default": ["Tell me more, " + user_name, "Is there something specific you'd like to discuss?"]
+                "ethical_question": [
+                    "That's an important ethical question. Let's reflect on it together.",
+                    "Morality often challenges us. What do you think about this situation?"
+                ],
+                "thematic_query": [
+                    "Faith, hope, and love often guide our actions. What resonates with you most?",
+                    "This reminds me of profound truths. Do you have a perspective to share?"
+                ],
+                "emotion_positive": ["I'm glad to see you're in good spirits! Want to share more?", "It's wonderful to feel joy. What sparked it?"],
+                "emotion_negative": ["I'm here to listen if you're feeling down.", "Would you like to talk about what's bothering you?"],
+                "unknown": ["Tell me more, so I can better understand.", "I'm intrigued by your thoughts. Please elaborate."],
             }
 
-            selected_question = random.choice(reflective_questions.get(intent, reflective_questions["default"]))
-            final_response = f"{random.choice(greeting_variations)} {selected_question} In the context of {context}, what are your thoughts?"
+            # Build the response
+            selected_response = random.choice(intent_responses.get(intent, ["Let's explore this further."]))
+            final_response = f"{base_greeting}{emotion_phrase}{memory_phrase}{selected_response}"
 
             logger.info(f"[GENERATED RESPONSE] {final_response}")
             return final_response

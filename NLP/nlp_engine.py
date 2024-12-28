@@ -1,5 +1,7 @@
 import logging
 from typing import Dict, List, Tuple
+from NLP.sentence_parser import SentenceParser
+from NLP.tokenizer import Tokenizer
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -17,100 +19,18 @@ class NLP:
         self.memory_engine = memory_engine
         self.response_generator = response_generator
         self.neo4j_connector = neo4j_connector
+        self.tokenizer = Tokenizer()
+        self.sentence_parser = SentenceParser()
 
         self.intent_keywords: Dict[str, List[str]] = {
-            # Greetings and Farewells
-            "greeting": ["hello", "hi", "hey", "good morning", "good afternoon", "good evening"],
-            "farewell": ["bye", "goodbye", "see you", "later", "take care", "farewell"],
-
-            # Identity and Introduction
-            "identity": ["who", "what's your name", "tell me about yourself", "introduce", "identity"],
-            "self_introduction": ["my name is", "I am", "about me", "introducing myself"],
-
-            # Gratitude and Apologies
-            "thanks": ["thanks", "thank you", "much appreciated", "grateful", "appreciate it"],
-            "apology": ["sorry", "apologize", "my bad", "pardon", "forgive me"],
-
-            # Emotional States
-            "emotion_positive": ["happy", "joyful", "excited", "pleased", "content", "thrilled", "optimistic"],
-            "emotion_negative": ["sad", "angry", "frustrated", "upset", "disappointed", "lonely", "anxious"],
-            "emotion_neutral": ["okay", "fine", "normal", "indifferent", "neutral"],
-            "emotion_mixed": ["bittersweet", "conflicted", "complicated", "unsure", "torn"],
-
-            # Questions and Clarifications
-            "question_general": ["what", "why", "how", "when", "where", "who"],
-            "question_clarification": ["clarify", "explain", "elaborate", "more details"],
-            "question_personal": ["about me", "do you know me", "how am I", "my memories"],
-
-            # Commands and Actions
-            "command": ["do", "execute", "run", "perform", "activate", "start"],
-            "action_request": ["help", "assist", "support", "fix", "troubleshoot"],
-            "stop_command": ["stop", "end", "terminate", "cease", "halt"],
-
-            # Suggestions and Recommendations
-            "suggestion": ["recommend", "suggest", "what should I", "any ideas", "options"],
-            "advice": ["advice", "guidance", "tips", "best way to", "should I"],
-
-            # Search and Retrieval
-            "search": ["search", "find", "lookup", "retrieve", "look for", "fetch"],
-            "memory_search": ["recall", "remember", "past", "previous", "history"],
-
-            # Confirmation and Agreement
-            "confirmation": ["yes", "correct", "right", "agreed", "affirmative"],
-            "negation": ["no", "not correct", "wrong", "disagree", "negative"],
-
-            # Social and Interaction
-            "compliment": ["great job", "well done", "impressive", "amazing", "fantastic"],
-            "criticism": ["could be better", "improve", "not good", "problem", "issue"],
-            "small_talk": ["how are you", "what's up", "what's new", "chat", "conversation"],
-
-            # Humor and Fun
-            "joke_request": ["tell me a joke", "make me laugh", "funny", "humor"],
-            "entertainment": ["entertain me", "something fun", "bored", "show me"],
-
-            # Reflection and Philosophy
-            "introspection": ["why am I", "purpose", "meaning of life", "philosophy", "reflect"],
-            "existence": ["do you exist", "are you real", "what are you", "what am I"],
-
-            # Emotions Related to You
-            "emotions_about_maia": ["I like you", "you make me happy", "you are great", "you upset me"],
-
-            # Learning and Knowledge
-            "knowledge_request": ["teach me", "how does", "learn", "explain this", "what is"],
-            "progress_request": ["update", "progress", "status", "how far are we"],
-
-            # Troubleshooting
-            "error_report": ["error", "problem", "issue", "bug", "not working"],
-            "troubleshoot_request": ["how to fix", "troubleshoot", "repair", "diagnose"],
-
-            # Creativity and Imagination
-            "creative_request": ["imagine", "create", "design", "draw", "build"],
-            "writing_request": ["write a story", "compose", "poem", "lyrics", "novel"],
-
-            # Ethical and Moral Discussions
+            # Ethical Discussions
             "ethical_question": ["is it right", "should I", "ethics", "morals", "values"],
             "decision_dilemma": ["hard choice", "tough decision", "which should I", "decide"],
-
-            # Feedback and Improvement
-            "feedback_positive": ["good job", "I like it", "keep it up", "you did well"],
-            "feedback_negative": ["improve this", "not great", "bad", "needs work"],
-
-            # Fun and Interests
-            "hobbies": ["I like to", "my hobby", "favorite", "pastime", "interests"],
-            "games": ["play", "game", "challenge", "quiz", "fun activity"],
-
-            # Planning and Scheduling
-            "planning": ["schedule", "plan", "organize", "arrange", "calendar"],
-            "reminder": ["remind me", "alert", "notify", "set a reminder"],
-
-            # Miscellaneous
-            "unknown": ["unsure", "don't know", "random", "unclear", "no idea"]
         }
-
 
     def process(self, text: str, user_name: str = "User", context: str = "general conversation") -> Tuple[str, str]:
         """
-        Process input text, detect intent, and generate a response.
+        Process input text, detect intent, analyze emotions, and generate a response.
 
         :param text: User input to analyze.
         :param user_name: The user's name for personalization.
@@ -118,11 +38,16 @@ class NLP:
         :return: A tuple of (response, intent).
         """
         try:
-            intent = self.detect_intent(text)
-            parsed_data = {"text": text, "intent": intent, "emotions": ["neutral"]}
+            tokens = self.tokenizer.tokenize(text)
+            parsed_data = self.sentence_parser.parse(tokens)
 
-            response = self.response_generator.generate_response(parsed_data, user_name, intent, context)
-            logger.info(f"[NLP PROCESS] Text: '{text}', Intent: {intent}, Response: {response}")
+            intent = self.detect_intent(text)
+            emotions = self.analyze_emotions(tokens)
+
+            context_data = {"text": text, "tokens": tokens, "parsed": parsed_data, "emotions": emotions}
+            response = self.response_generator.generate_response(context_data, user_name, intent, context)
+
+            logger.info(f"[NLP PROCESS] Text: '{text}', Intent: {intent}, Emotions: {emotions}, Response: {response}")
             return response, intent
 
         except Exception as e:
@@ -148,3 +73,27 @@ class NLP:
         except Exception as e:
             logger.error(f"[INTENT DETECTION ERROR] {e}", exc_info=True)
             return "unknown"
+
+    def analyze_emotions(self, tokens: List[Dict[str, str]]) -> List[str]:
+        """
+        Analyze emotions based on token types and predefined emotional keywords.
+
+        :param tokens: Tokenized input.
+        :return: A list of detected emotions.
+        """
+        emotion_keywords = {
+            "positive": ["happy", "joyful", "grateful", "optimistic"],
+            "negative": ["sad", "angry", "frustrated", "lonely"],
+            "neutral": ["okay", "fine", "indifferent", "neutral"]
+        }
+
+        emotions = []
+        for token in tokens:
+            if token["type"] == "word" and token["value"].lower() in emotion_keywords:
+                for emotion, keywords in emotion_keywords.items():
+                    if token["value"].lower() in keywords:
+                        emotions.append(emotion)
+                        break
+
+        logger.info(f"[EMOTION ANALYSIS] Detected emotions: {emotions}")
+        return emotions if emotions else ["neutral"]

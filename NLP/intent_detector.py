@@ -1,74 +1,59 @@
 import logging
 from typing import List, Dict
+from core.memory_engine import MemoryEngine
 
 # Configure logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class IntentDetector:
-    def __init__(self):
+    def __init__(self, memory_engine: MemoryEngine):
         """
-        Initialize the IntentDetector with a comprehensive list of intents and associated keywords.
+        Initialize the IntentDetector with a comprehensive list of intents, associated keywords,
+        and memory integration for enhanced context.
+
+        :param memory_engine: An instance of MemoryEngine to access stored memories.
         """
+        self.memory_engine = memory_engine
         self.intents: Dict[str, List[str]] = {
-            "greeting": ["hello", "hi", "hey", "greetings", "good morning", "good evening", "howdy", "salutations"],
+            "greeting": ["hello", "hi", "hey", "greetings", "good morning", "good evening"],
             "identity": ["who", "what", "name", "you", "your purpose", "identity", "self", "origin"],
-            "exit": ["bye", "exit", "quit", "goodbye", "see you later", "farewell", "adios", "later"],
+            "exit": ["bye", "exit", "quit", "goodbye", "see you later", "farewell"],
+            "ethical_question": ["is it right", "should I", "ethics", "morals", "values", "virtue", "justice"],
+            "thematic_query": ["meaning", "purpose", "faith", "hope", "redemption", "love", "truth"],
             "question": ["what", "why", "how", "when", "where", "which", "could", "do"],
             "confirmation": ["yes", "yeah", "sure", "okay", "indeed", "affirmative", "right", "correct"],
-            "negation": ["no", "nope", "not", "never", "negative", "disagree", "wrong", "nah"],
-            "thanks": ["thank", "thanks", "appreciate", "grateful", "appreciation", "thanks a lot", "cheers"],
-            "apology": ["sorry", "apologize", "excuse", "pardon", "regret", "my bad", "oops"],
-            "request": ["can", "could", "would", "please", "may", "want", "need", "wish"],
-            "order": ["buy", "order", "purchase", "get", "need", "require", "acquire", "fetch"],
-            "location": ["address", "location", "place", "where", "directions", "map", "GPS"],
-            "time": ["time", "when", "duration", "schedule", "appointment", "clock", "timer"],
-            "weather": ["weather", "temperature", "forecast", "climate", "rain", "snow", "sunny"],
-            "calculation": ["calculate", "compute", "math", "add", "subtract", "multiply", "divide", "average"],
-            "search": ["search", "find", "look", "google", "research", "investigate", "browse", "explore"],
-            "information": ["info", "details", "data", "facts", "knowledge", "learn", "educate", "enlighten"],
-            "help": ["help", "support", "assistance", "guide", "advice", "tutorial", "mentor", "coach"],
-            "contact": ["contact", "email", "phone", "call", "reach", "connect", "message", "text"],
-            "reminder": ["remind", "reminder", "alert", "notify", "note", "memo", "alarm", "cue"],
-            "entertainment": ["movie", "music", "book", "game", "play", "watch", "listen", "read"],
-            "complaint": ["complain", "issue", "problem", "dispute", "unhappy", "annoyed", "frustrated", "dissatisfied"],
-            "feedback": ["feedback", "opinion", "review", "comment", "suggest", "rate", "critique", "evaluate"],
-            "translation": ["translate", "language", "interpret", "conversion", "phrase", "word", "lingo", "dialect"],
-            "health": ["health", "symptom", "doctor", "medicine", "illness", "fitness", "wellness", "diagnose"],
-            "travel": ["travel", "trip", "vacation", "journey", "flight", "destination", "tour", "adventure"],
-            "food": ["food", "recipe", "cook", "eat", "restaurant", "meal", "dine", "cuisine"],
-            "technology": ["tech", "device", "software", "app", "gadget", "code", "program", "hack"],
-            "news": ["news", "current", "event", "update", "headline", "article", "report", "breaking"],
-            "sports": ["sport", "game", "score", "team", "athlete", "match", "championship", "tournament"],
-            "education": ["learn", "study", "school", "education", "course", "teach", "tutor", "lecture"],
-            "finance": ["money", "finance", "bank", "invest", "stock", "price", "budget", "savings"],
-            "social": ["friend", "chat", "meet", "date", "party", "socialize", "network", "connect"],
-            "fun": ["fun", "enjoy", "laugh", "celebrate", "party", "joke", "amuse", "entertain"],
-            "philosophy": ["think", "philosophy", "life", "meaning", "truth", "exist", "ponder", "reflect"],
-            "sci-fi": ["sci-fi", "science fiction", "space", "aliens", "future", "technology", "dystopia", "utopia"],
-            "history": ["history", "past", "event", "era", "ancient", "medieval", "historical", "legacy"],
-            "art": ["art", "painting", "sculpture", "music", "dance", "theater", "cinema", "literature"],
-            "politics": ["politics", "government", "election", "policy", "law", "vote", "democracy", "diplomacy"],
-            "environment": ["environment", "nature", "climate", "ecology", "conservation", "green", "sustain", "pollution"],
-            "pets": ["pet", "dog", "cat", "animal", "care", "vet", "groom", "adopt"],
-            "fashion": ["fashion", "style", "clothing", "wear", "trend", "design", "outfit", "look"],
-            "psychology": ["psychology", "mind", "behavior", "emotion", "therapy", "mental", "counsel", "personality"],
+            "negation": ["no", "nope", "not", "never", "negative", "disagree", "wrong"],
         }
 
     def detect_intent(self, tokens: List[str]) -> str:
         """
-        Detect the intent based on the presence of keywords in the tokenized text.
+        Detect the intent based on the presence of keywords in the tokenized text and memory relevance.
 
         :param tokens: List of tokens (words) to check against intents.
         :return: The detected intent or 'unknown' if no match found.
         """
         try:
+            # First, match intents based on keywords
+            detected_intent = "unknown"
             for intent, keywords in self.intents.items():
                 if any(token.lower() in keywords for token in tokens):
-                    logger.info(f"[INTENT DETECTED] Intent: {intent} for tokens: {tokens}")
-                    return intent
-            logger.info(f"[INTENT DETECTION] No intent matched for tokens: {tokens}")
-            return "unknown"
+                    detected_intent = intent
+                    break
+
+            # If no intent is matched, check related memories
+            if detected_intent == "unknown":
+                text = " ".join(tokens)
+                memory = self.memory_engine.search_memory(text)
+                if memory:
+                    logger.info(f"[MEMORY CONTEXT] Found related memory: {memory['text']} for tokens: {tokens}")
+                    if any(keyword in memory['text'] for keyword in self.intents["ethical_question"]):
+                        detected_intent = "ethical_question"
+                    elif any(keyword in memory['text'] for keyword in self.intents["thematic_query"]):
+                        detected_intent = "thematic_query"
+
+            logger.info(f"[INTENT DETECTION] Detected intent: {detected_intent} for tokens: {tokens}")
+            return detected_intent
         except Exception as e:
-            logger.error(f"[INTENT DETECTION ERROR] Error detecting intent: {e}", exc_info=True)
+            logger.error(f"[INTENT DETECTION ERROR] Error detecting intent for tokens: {tokens}: {e}", exc_info=True)
             return "unknown"

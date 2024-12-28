@@ -108,3 +108,37 @@ class DreamEngine:
 
         logger.debug(f"[DREAM NARRATIVE] Constructed narrative with length: {len(dream_narrative)}")
         return f"In a symbolic world: {dream_narrative}."
+
+    def weighted_dream_generation(self) -> str:
+        """
+        Generate a dream narrative with weighted importance for key themes.
+    
+        :return: Weighted dream narrative.
+        """
+        try:
+            seed_memories = self.select_random_memories()
+            weights = {memory["theme"]: memory["weight"] for memory in seed_memories}
+            narrative = " ".join(f"{theme} ({weights[theme]})" for theme in weights)
+            logger.info(f"[WEIGHTED DREAM] {narrative}")
+            return narrative
+        except Exception as e:
+            logger.error(f"[DREAM GENERATION ERROR] {e}", exc_info=True)
+            return "Dream generation failed."
+    
+    def link_dream_fragments(self, fragments: List[Dict]) -> List[Dict]:
+        """
+        Dynamically link dream fragments into a coherent narrative.
+    
+        :param fragments: List of memory fragments to link.
+        :return: Linked dream fragments.
+        """
+        try:
+            linked_fragments = []
+            for fragment in fragments:
+                related = self.context_search.find_contextual_links(fragment["memory"])
+                linked_fragments.append({"memory": fragment["memory"], "related": related})
+            logger.info(f"[DREAM LINKAGE] Linked fragments: {len(linked_fragments)}")
+            return linked_fragments
+        except Exception as e:
+            logger.error(f"[LINKAGE ERROR] {e}", exc_info=True)
+            return []

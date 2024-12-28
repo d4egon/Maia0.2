@@ -1,12 +1,12 @@
 import os
 import sys
 import logging
-import magic
 import time
 from functools import lru_cache
-from flask import Flask, render_template, request, jsonify
+from tempfile import NamedTemporaryFile
+from flask import Flask, render_template, request, jsonify, abort
 from werkzeug.utils import secure_filename
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # type: ignore
 from config.settings import CONFIG
 from core.neo4j_connector import Neo4jConnector
 from core.memory_engine import MemoryEngine
@@ -24,9 +24,7 @@ from core.deduplication_engine import DeduplicationEngine
 from NLP.consciousness_engine import ConsciousnessEngine
 from NLP.intent_detector import IntentDetector
 from core.self_initiated_conversation import SelfInitiatedConversation
-from flask_socketio import SocketIO
-
-
+from flask_socketio import SocketIO  # type: ignore
 
 # Load Environment Variables
 load_dotenv()
@@ -65,6 +63,7 @@ def apply_csp_headers(response):
         "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; "
         "font-src 'self'; img-src 'self' data:; connect-src 'self' ws: wss:"
     )
+    response.headers['X-Content-Type-Options'] = 'nosniff'
     return response
 
 # Ensure Upload Folder Exists
@@ -81,6 +80,10 @@ try:
     neo4j_user = CONFIG.get("NEO4J_USER")
     neo4j_password = CONFIG.get("NEO4J_PASSWORD")
 
+    if not neo4j_uri or not neo4j_user or not neo4j_password:
+        logger.critical("Missing Neo4j configuration. Check your .env file.")
+        sys.exit(1)
+
     neo4j = Neo4jConnector(neo4j_uri, neo4j_user, neo4j_password)
     memory_engine = MemoryEngine(neo4j)
     response_gen = ResponseGenerator(memory_engine, neo4j)
@@ -94,7 +97,7 @@ try:
     context_search_engine = ContextSearchEngine(neo4j)
     deduplication_engine = DeduplicationEngine(neo4j_uri, neo4j_user, neo4j_password)
     consciousness_engine = ConsciousnessEngine(memory_engine, emotion_engine)
-    intent_detector = IntentDetector()
+    intent_detector = IntentDetector(memory_engine)
 
     conversation_engine = ConversationEngine(
         memory_engine,
@@ -125,15 +128,12 @@ def cached_get_gallery_images():
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def get_file_size(filepath):
-    size = os.path.getsize(filepath) / (1024 * 1024)
-    logger.debug(f"[FILE SIZE] File: {filepath} | Size: {size:.2f} MB")
-    return size
-
-def clean_file(filepath):
-    if os.path.exists(filepath):
-        os.remove(filepath)
-        logger.info(f"[CLEANUP] Removed file '{filepath}'.")
+def validate_request_data(data, required_keys):
+    if not data:
+        abort(400, description="Invalid input data.")
+    for key in required_keys:
+        if key not in data or not isinstance(data[key], str) or not data[key].strip():
+            abort(400, description=f"Invalid or missing key: {key}")
 
 # Routes
 @app.route('/')
@@ -147,39 +147,43 @@ def upload_file():
         return jsonify({"message": "No file uploaded", "status": "error"}), 400
 
     file = request.files['file']
-    if not file.filename:
-        return jsonify({"message": "Empty file name", "status": "error"}), 400
+    if not file.filename or not allowed_file(file.filename):
+        return jsonify({"message": "Invalid file type", "status": "error"}), 400
 
-    if file and allowed_file(file.filename):
-        filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    filename = secure_filename(file.filename)
+    filename = f"{int(time.time())}_{filename}"  # Prevent filename collisions
+    filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+
+    try:
         file.save(filepath)
+        result = file_parser.parse(filepath)
+        memory_engine.store_memory(
+            text=result,
+            emotions=["neutral"],
+            extra_properties={"source": filename, "type": "upload"}
+        )
+        os.unlink(filepath)  # Clean up after processing
+        logger.info(f"[UPLOAD] File '{filename}' uploaded and processed successfully.")
+        return jsonify({"message": "File processed successfully.", "status": "success"}), 200
+    except Exception as e:
+        os.unlink(filepath)
+        logger.error(f"[UPLOAD ERROR] {e}", exc_info=True)
+        return jsonify({"message": "Error processing file.", "status": "error"}), 500
 
-        mime = magic.from_file(filepath, mime=True)
-        if not mime.startswith(('text/', 'application/pdf', 'image/')):
-            clean_file(filepath)
-            return jsonify({"message": "Invalid file type", "status": "error"}), 400
+@app.route('/ask_maia', methods=['POST'])
+def ask_maia():
+    try:
+        data = request.get_json()
+        validate_request_data(data, ['question'])
 
-        if get_file_size(filepath) > MAX_FILE_SIZE_MB:
-            clean_file(filepath)
-            return jsonify({"message": "File too large", "status": "error"}), 413
+        question = data['question']
+        intent = nlp_engine.detect_intent(question)
+        response, _ = nlp_engine.process(question)
 
-        try:
-            result = file_parser.parse(filepath)
-            memory_engine.store_memory(
-                text=result,
-                emotions=["neutral"],
-                extra_properties={"source": filename, "type": "file_upload"}
-            )
-            clean_file(filepath)
-            logger.info(f"[UPLOAD SUCCESS] File '{filename}' processed successfully.")
-            return jsonify({"message": "File processed successfully.", "status": "success"}), 200
-        except Exception as e:
-            clean_file(filepath)
-            logger.error(f"[UPLOAD ERROR] Failed to process file: {e}", exc_info=True)
-            return jsonify({"message": "Error processing file.", "status": "error"}), 500
-    else:
-        return jsonify({"message": "File type not allowed", "status": "error"}), 400
+        return jsonify({"response": response, "intent": intent, "status": "success"}), 200
+    except Exception as e:
+        logger.error(f"[ASK MAIA] Error: {e}", exc_info=True)
+        return jsonify({"message": "An error occurred.", "status": "error"}), 500
 
 @app.route('/get_gallery_images', methods=['GET'])
 def get_gallery_images():
@@ -190,84 +194,7 @@ def get_gallery_images():
         }
     return jsonify({"images": gallery_cache['gallery']['images']})
 
-@app.route('/query_memory', methods=['GET'])
-def query_memory():
-    logger.info("[MEMORY QUERY] Querying latest memories.")
-    try:
-        page = request.args.get('page', 1, type=int)
-        limit = request.args.get('limit', 5, type=int)
-        offset = (page - 1) * limit
-        query = """
-        MATCH (m:Memory)
-        RETURN m.text AS memory, m.last_updated AS lastUpdated
-        ORDER BY m.last_updated DESC
-        SKIP $offset LIMIT $limit
-        """
-        results = neo4j.run_query(query, {"offset": offset, "limit": limit})
-        logger.debug(f"[MEMORY QUERY] Results: {results}")
-        return jsonify({"results": results, "status": "success", "page": page, "limit": limit}), 200
-    except Exception as e:
-        logger.error(f"[MEMORY QUERY ERROR] {e}", exc_info=True)
-        return jsonify({"message": "Failed to query memory.", "status": "error"}), 500
-
-@app.route('/ask_maia', methods=['POST'])
-def ask_maia():
-    try:
-        data = request.get_json()
-        logger.info(f"[ASK MAIA] Received question: {data}")
-
-        if not data or 'question' not in data:
-            logger.error("[ASK MAIA] Invalid input.")
-            return jsonify({"message": "Invalid input.", "status": "error"}), 400
-
-        question = data['question']
-        intent = nlp_engine.detect_intent(question)
-        response, _ = nlp_engine.process(question)
-        
-        logger.info(f"[ASK MAIA] Response generated: {response}")
-        return jsonify({"response": response, "intent": intent, "status": "success"}), 200
-    except Exception as e:
-        logger.error(f"[ASK MAIA] Error: {e}", exc_info=True)
-        return jsonify({"message": "An error occurred.", "status": "error"}), 500
-
-@app.route('/generate_dream', methods=['GET'])
-def generate_dream():
-    try:
-        dream = dream_engine.generate_dream()
-        logger.info(f"[DREAM GENERATED] {dream[:100]}{'...' if len(dream) > 100 else ''}")
-        return jsonify({"dream": dream, "status": "success"}), 200
-    except Exception as e:
-        logger.error(f"[DREAM GENERATION ERROR] {e}", exc_info=True)
-        return jsonify({"message": "Failed to generate dream.", "status": "error"}), 500
-
-@app.route('/evaluate_ethics', methods=['POST'])
-def evaluate_ethics():
-    try:
-        data = request.get_json()
-        if not data or 'scenario' not in data or 'choice' not in data:
-            return jsonify({"message": "Invalid data provided.", "status": "error"}), 400
-
-        scenario = data['scenario']
-        choice = data['choice']
-        result = ethics_engine.evaluate_decision(scenario, choice)
-        return jsonify({"result": result, "status": "success"}), 200
-    except Exception as e:
-        logger.error(f"[ETHICS EVALUATION ERROR] {e}", exc_info=True)
-        return jsonify({"message": "Failed to evaluate ethical decision.", "status": "error"}), 500
-
-@app.route('/introspect', methods=['GET'])
-def introspect():
-    try:
-        introspection = consciousness_engine.introspect()
-        logger.info(f"[INTROSPECTION] {introspection[:100]}{'...' if len(introspection) > 100 else ''}")
-        return jsonify({"introspection": introspection, "status": "success"}), 200
-    except Exception as e:
-        logger.error(f"[INTROSPECTION ERROR] {e}", exc_info=True)
-        return jsonify({"message": "Failed to introspect.", "status": "error"}), 500
-
-
 if __name__ == "__main__":
     logger.info("[START] MAIA Server is starting...")
     self_initiated_conversation.start_scheduler()
     socketio.run(app, host="0.0.0.0", port=5000, debug=os.getenv("FLASK_DEBUG", "false").lower() == "true")
-

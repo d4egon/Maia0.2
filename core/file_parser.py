@@ -1,9 +1,9 @@
 import logging
 import mimetypes
 import os
-from PyPDF2 import PdfReader
-import pytesseract
-import speech_recognition as sr
+from PyPDF2 import PdfReader # type: ignore
+import pytesseract # type: ignore
+import speech_recognition as sr # type: ignore
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)

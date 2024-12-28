@@ -77,3 +77,18 @@ class EmotionEngine:
         self.memory_engine.tag_memory(thought, emotion)
         logger.info(f"[EMOTION ENGINE] Tagged '{thought}' with emotion: {emotion}")
         return emotion
+
+    def concurrent_thought_processing(self, thoughts: List[str]):
+        """
+        Process multiple thoughts concurrently.
+    
+        :param thoughts: List of thoughts to process.
+        """
+        from concurrent.futures import ThreadPoolExecutor
+        try:
+            with ThreadPoolExecutor() as executor:
+                results = executor.map(self.thought_engine.reflect, thoughts)
+                for result in results:
+                    logger.info(f"[CONCURRENT PROCESSING] {result}")
+        except Exception as e:
+            logger.error(f"[CONCURRENT ERROR] {e}")

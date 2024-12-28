@@ -84,3 +84,41 @@ class InteractiveLearning:
         except Exception as e:
             logger.error(f"Failed to update example context for node ID {node_id}: {e}")
             raise
+
+    def generate_follow_up_questions(self, theme: str) -> List[str]:
+        """
+        Generate follow-up questions based on a specific theme.
+    
+        :param theme: The theme to base questions on.
+        :return: A list of follow-up questions.
+        """
+        questions = {
+            "emotion": [
+                "How does this make you feel?",
+                "Can you share a similar experience?",
+                "What emotions does this situation evoke?"
+            ],
+            "knowledge": [
+                "What more would you like to know about this?",
+                "Have you encountered this idea before?",
+                "What questions do you have about this concept?"
+            ]
+        }
+        return questions.get(theme, ["Can you tell me more?"])
+
+    def refine_knowledge(self, node_id: str, feedback: str):
+        """
+        Refine knowledge based on user feedback.
+    
+        :param node_id: ID of the node to refine.
+        :param feedback: User feedback to apply.
+        """
+        try:
+            query = f"""
+            MATCH (n) WHERE n.id = '{node_id}'
+            SET n.feedback = COALESCE(n.feedback, '') + ' | ' + '{feedback}'
+            """
+            self.graph_client.run_query(query)
+            logger.info(f"[KNOWLEDGE REFINED] Feedback added to node {node_id}.")
+        except Exception as e:
+            logger.error(f"[REFINE ERROR] Failed to refine node {node_id}: {e}")

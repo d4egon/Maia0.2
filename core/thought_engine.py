@@ -41,3 +41,19 @@ class ThoughtEngine:
         except Exception as e:
             logger.error(f"[REFLECT ERROR] Error reflecting on '{input_text}': {e}", exc_info=True)
             return "An error occurred while reflecting on the event."
+
+    def synthesize_emergent_thoughts(self, memory_nodes: List[Dict]) -> str:
+        """
+        Synthesize emergent thoughts from related memory nodes.
+    
+        :param memory_nodes: List of memory nodes to synthesize.
+        :return: A synthesized thought.
+        """
+        try:
+            combined_themes = " + ".join(set(node["theme"] for node in memory_nodes))
+            emergent_thought = f"By combining {combined_themes}, we arrive at a new perspective."
+            logger.info(f"[EMERGENT THOUGHT] {emergent_thought}")
+            return emergent_thought
+        except Exception as e:
+            logger.error(f"[SYNTHESIS ERROR] {e}")
+            return "An error occurred during thought synthesis."

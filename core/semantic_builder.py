@@ -75,6 +75,30 @@ class SemanticBuilder:
         except Exception as e:
             logger.error(f"Failed to create relationship between {id1} and {id2}: {e}")
 
+    def detect_narrative_shifts(self):
+        """
+        Detect shifts in narrative themes in the graph.
+    
+        :return: List of detected shifts.
+        """
+        query = """
+        MATCH (m:Memory)
+        RETURN m.text AS text, m.theme AS theme, m.timestamp AS timestamp
+        ORDER BY m.timestamp
+        """
+        try:
+            nodes = self.graph_client.run_query(query)
+            shifts = []
+            for i in range(1, len(nodes)):
+                if nodes[i]["theme"] != nodes[i - 1]["theme"]:
+                    shifts.append(f"Shift from {nodes[i - 1]['theme']} to {nodes[i]['theme']} at {nodes[i]['timestamp']}.")
+            logger.info(f"[NARRATIVE SHIFTS] Detected {len(shifts)} shifts.")
+            return shifts
+        except Exception as e:
+            logger.error(f"[SHIFT DETECTION ERROR] {e}")
+            return []
+
+
 # Usage example:
 # sb = SemanticBuilder(graph_client)
 # sb.build_relationships(label="Emotion", relationship_type="SIMILAR_TO")

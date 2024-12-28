@@ -9,7 +9,8 @@ from flask_talisman import Talisman
 from flask_caching import Cache
 import logging
 from logging.handlers import RotatingFileHandler
-
+from NLP.conciousness_engine import ConciousnessEngine
+from NLP.nlp_engine import NLPEngine
 from core.deduplication_engine import DeduplicationEngine
 from core.attribute_enrichment import AttributeEnrichment
 from core.interactive_learning import InteractiveLearning
@@ -150,6 +151,31 @@ def interactive_learning_v1():
         app.logger.error(f"Interactive learning error: {str(e)}")
         return jsonify({"error": "An error occurred during interactive learning", "details": str(e)}), 500
 
+@app.route("/v1/recursive_introspection", methods=["POST"])
+def recursive_introspection():
+    """
+    Perform recursive introspection based on a user-provided theme.
+    ---
+    parameters:
+      - name: theme
+        in: body
+        type: string
+        required: true
+    responses:
+      200:
+        description: Introspection completed successfully
+      500:
+        description: An error occurred
+    """
+    try:
+        theme = request.json.get("theme")
+        results = consciousness_engine.expanded_recursive_reflection(theme, depth=5)
+        logger.info(f"[RECURSIVE INTROSPECTION] Results: {results}")
+        return jsonify({"results": results, "status": "success"}), 200
+    except Exception as e:
+        logger.error(f"[RECURSIVE INTROSPECTION ERROR] {e}", exc_info=True)
+        return jsonify({"message": "Failed to perform introspection.", "status": "error"}), 500
+
 @app.route("/v1/build_relationships", methods=["POST"])
 def build_relationships_v1():
     """
@@ -240,10 +266,58 @@ def propagate_signal_v1():
         app.logger.error(f"Signal propagation error: {str(e)}")
         return jsonify({"error": "An error occurred during signal propagation", "details": str(e)}), 500
 
+@app.route("/v1/visualize_thoughts", methods=["GET"])
+def visualize_thoughts():
+    """
+    Generate a real-time visualization of M.A.I.A.'s thought process.
+    ---
+    responses:
+      200:
+        description: Visualization generated successfully
+      500:
+        description: An error occurred
+    """
+    try:
+        thought_graph = memory_linker.generate_visualization()
+        logger.info(f"[THOUGHT VISUALIZATION] Generated successfully.")
+        return jsonify({"visualization": thought_graph, "status": "success"}), 200
+    except Exception as e:
+        logger.error(f"[VISUALIZATION ERROR] {e}", exc_info=True)
+        return jsonify({"message": "Failed to generate visualization.", "status": "error"}), 500
+
+
 @app.errorhandler(Exception)
 def handle_exception(e):
     app.logger.error(f"An error occurred: {str(e)}")
     return jsonify({"error": "An unexpected error occurred", "details": str(e)}), 500
+
+@app.route("/v1/conversation", methods=["POST"])
+def dynamic_conversation():
+    """
+    Start a dynamic conversation with M.A.I.A. based on user input.
+    ---
+    parameters:
+      - name: input
+        in: body
+        type: string
+        required: true
+    responses:
+      200:
+        description: Conversation response
+      500:
+        description: An error occurred
+    """
+    try:
+        user_input = request.json.get("input")
+        logger.info(f"[CONVERSATION] User Input: {user_input}")
+        intent = nlp_engine.detect_intent(user_input)
+        response, _ = consciousness_engine.reflect(user_input)
+        logger.info(f"[CONVERSATION RESPONSE] {response}")
+        return jsonify({"response": response, "intent": intent, "status": "success"}), 200
+    except Exception as e:
+        logger.error(f"[CONVERSATION ERROR] {e}", exc_info=True)
+        return jsonify({"message": "An error occurred during the conversation.", "status": "error"}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, ssl_context='adhoc')  # Use 'adhoc' for development, secure SSL in production

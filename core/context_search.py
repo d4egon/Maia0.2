@@ -88,3 +88,27 @@ class ContextSearchEngine:
                 logger.info(f"[LINK CREATED] '{source_text}' ↔ '{memory['memory']}'")
         except Exception as e:
             logger.error(f"[LINK CREATION FAILED] {e}", exc_info=True)
+
+    def advanced_context_matching(self, input_text: str) -> List[Dict]:
+        """
+        Match contexts using semantic embeddings and deeper similarity thresholds.
+    
+        :param input_text: Text to match against the graph.
+        :return: List of matching contexts.
+        """
+        try:
+            embedding = self.embedding_model.encode(input_text, convert_to_tensor=True)
+            matches = self.db.run_query("MATCH (m:Memory) RETURN m.text AS text")
+            scored_matches = [
+                {
+                    "text": match["text"],
+                    "score": util.cos_sim(embedding, self.embedding_model.encode(match["text"])).item()
+                }
+                for match in matches
+            ]
+            filtered = [m for m in scored_matches if m["score"] > 0.7]
+            logger.info(f"[ADVANCED MATCHING] Found {len(filtered)} matches.")
+            return filtered
+        except Exception as e:
+            logger.error(f"[MATCHING ERROR] {e}", exc_info=True)
+            return []

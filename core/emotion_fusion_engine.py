@@ -138,3 +138,33 @@ class EmotionFusionEngine:
         total_confidence = round(emotions[final_emotion], 2)
         logger.info(f"[FINAL EMOTION] {final_emotion} (Total Confidence: {total_confidence})")
         return final_emotion
+
+    def decay_emotional_states(self):
+        """
+        Apply time-based decay to emotional confidence scores.
+    
+        :return: Updated emotional states.
+        """
+        try:
+            for emotion, score in self.emotion_engine.dynamic_emotional_state.items():
+                self.emotion_engine.dynamic_emotional_state[emotion] *= 0.9  # 10% decay
+            logger.info(f"[DECAY APPLIED] {self.emotion_engine.dynamic_emotional_state}")
+            return self.emotion_engine.dynamic_emotional_state
+        except Exception as e:
+            logger.error(f"[DECAY ERROR] {e}", exc_info=True)
+            return {}
+    
+    def prioritize_context_emotions(self, context_emotions: List[Dict]) -> str:
+        """
+        Prioritize emotions based on contextual confidence and thematic relevance.
+    
+        :param context_emotions: List of context emotions with confidence scores.
+        :return: Dominant emotion.
+        """
+        try:
+            prioritized = max(context_emotions, key=lambda x: x.get("confidence", 0))
+            logger.info(f"[PRIORITIZED EMOTION] {prioritized}")
+            return prioritized
+        except Exception as e:
+            logger.error(f"[PRIORITIZATION ERROR] {e}", exc_info=True)
+            return "neutral"

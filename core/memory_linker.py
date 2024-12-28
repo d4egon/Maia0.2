@@ -132,3 +132,24 @@ class MemoryLinker:
         # schedule.every(1).day.at("00:00").do(self.run_periodic_linking)
         # schedule.every(1).hour.do(self.detect_cycles)
         logger.info("Periodic tasks scheduling would be implemented here.")
+
+    def recursive_linking(self, start_node_id: str, depth: int = 3):
+        """
+        Recursively link nodes based on themes and emotions.
+    
+        :param start_node_id: Starting node ID.
+        :param depth: Depth of recursion.
+        """
+        if depth <= 0:
+            return
+        try:
+            query = f"""
+            MATCH (n:Memory {{id: '{start_node_id}'}})-[:RELATED_TO*]->(related:Memory)
+            WITH related LIMIT 10
+            MERGE (n)-[:REINFORCES {{weight: 0.5}}]->(related)
+            """
+            self.db.run_query(query)
+            self.recursive_linking(start_node_id, depth - 1)
+            logger.info(f"[RECURSIVE LINKING] Linked recursively for node {start_node_id}.")
+        except Exception as e:
+            logger.error(f"[LINKING ERROR] {e}")

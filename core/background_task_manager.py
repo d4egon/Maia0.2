@@ -42,11 +42,11 @@ class BackgroundTaskManager:
             time.sleep(1800)  # Every 30 minutes
             
     def initiate_background_introspection(self):
-    """
-    Starts background memory linking and emotional evolution.
-    """
+        """
+        Starts background memory linking and emotional evolution.
+        """
         self.background_task_manager.run_introspective_tasks(interval=300)  # Every 5 mins
-
+    
     def journaling_cycle(self):
         """
         Periodically triggers reflective journaling.

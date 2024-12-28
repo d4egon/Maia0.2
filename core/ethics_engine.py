@@ -3,6 +3,8 @@
 import logging
 from typing import Dict, Any
 from core.neo4j_connector import Neo4jConnector
+from typing import List
+
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -103,3 +105,41 @@ class EthicsEngine:
             logger.info(f"[MEMORY STORED] Ethical decision stored: {decision}")
         except Exception as e:
             logger.error(f"[MEMORY STORAGE ERROR] {e}", exc_info=True)
+
+    def recursive_evaluation(self, scenario: str, depth: int = 3) -> Dict[str, Any]:
+        """
+        Perform a recursive evaluation of an ethical scenario to explore deeper layers of decision-making.
+    
+        :param scenario: Ethical scenario to evaluate.
+        :param depth: Depth of recursion.
+        :return: Dictionary with detailed evaluation results.
+        """
+        if depth <= 0:
+            return {"result": "Depth limit reached. No further analysis possible."}
+    
+        try:
+            evaluation = self.evaluate_decision(scenario, choice="explore")
+            logger.info(f"[RECURSIVE EVALUATION] Depth {depth}: {evaluation}")
+            next_layer = self.recursive_evaluation(scenario, depth - 1)
+            evaluation["next_layer"] = next_layer
+            return evaluation
+        except Exception as e:
+            logger.error(f"[RECURSIVE ERROR] {e}", exc_info=True)
+            return {"error": "An error occurred during recursive evaluation."}
+    
+    def resolve_conflicts(self, scenario: str, choices: List[str]) -> str:
+        """
+        Resolve conflicts by evaluating multiple choices and recommending the optimal path.
+    
+        :param scenario: Ethical scenario to evaluate.
+        :param choices: List of choices to evaluate.
+        :return: Recommended choice.
+        """
+        try:
+            evaluations = {choice: self.evaluate_decision(scenario, choice) for choice in choices}
+            best_choice = max(evaluations, key=lambda x: evaluations[x].get("outcome_weight", 0))
+            logger.info(f"[CONFLICT RESOLUTION] Best choice for '{scenario}': {best_choice}")
+            return best_choice
+        except Exception as e:
+            logger.error(f"[CONFLICT RESOLUTION ERROR] {e}", exc_info=True)
+            return "Error in resolving conflicts."
