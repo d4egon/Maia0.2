@@ -1,16 +1,12 @@
 {
   "ExpandedNodes": [
     "",
+    "\\core",
     "\\NLP",
-    "\\tests",
     "\\web_server",
     "\\web_server\\static",
-    "\\web_server\\static\\css",
-    "\\web_server\\static\\images",
-    "\\web_server\\static\\js",
-    "\\web_server\\templates",
-    "\\web_server\\uploads"
+    "\\web_server\\static\\js"
   ],
-  "SelectedNode": "\\core\\memory_engine.py",
+  "SelectedNode": "\\core\\background_task_manager.py",
   "PreviewInSolutionExplorer": false
 }

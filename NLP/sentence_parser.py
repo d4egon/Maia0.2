@@ -6,21 +6,10 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class SentenceParser:
-    def parse(self, tokens: List[str]) -> Dict[str, List[str]]:
+    def parse(self, tokens: List[Dict[str, str]]) -> Dict[str, List[str]]:
         """
-        Parse a list of tokens to identify grammatical components like subject, verb, object, and modifiers.
-
-        The parser supports basic dependency analysis and extracts:
-        - Subjects
-        - Verbs
-        - Objects
-        - Modifiers (e.g., adjectives, adverbs)
-        - Phrases (e.g., noun phrases, verb phrases)
-
-        :param tokens: A list of tokenized words from the sentence.
-        :return: A dictionary with components such as 'subject', 'verb', 'object', 'modifiers', and 'phrases'.
-
-        :raises ValueError: If tokens is not a list or if it's empty.
+        Parse a list of tokenized dictionaries to identify grammatical components.
+        Each token is expected to be a dictionary with a 'value' key containing the word.
         """
         parsed = {
             "subject": [],
@@ -32,29 +21,26 @@ class SentenceParser:
 
         try:
             if not isinstance(tokens, list) or not tokens:
-                raise ValueError("Input must be a non-empty list of tokens.")
+                raise ValueError("Input must be a non-empty list of token dictionaries.")
 
-            # Simple rules-based dependency analysis
-            for i, token in enumerate(tokens):
-                # Identify subjects and verbs (basic rule: subject precedes verb)
+            for token_dict in tokens:
+                if not isinstance(token_dict, dict) or "value" not in token_dict:
+                    logger.warning(f"[PARSE WARNING] Skipping invalid token: {token_dict}")
+                    continue
+                
+                token = token_dict["value"]
+
+                # Identify grammatical components
                 if token.lower() in {"he", "she", "it", "they", "we", "you", "i"}:
                     parsed["subject"].append(token)
                 elif token.lower() in {"is", "are", "was", "were", "be", "has", "have", "do", "does"}:
                     parsed["verb"].append(token)
-                elif i > 0 and tokens[i - 1].lower() in {"the", "a", "an"}:
-                    parsed["object"].append(token)  # Assume articles precede objects
-
-                # Identify modifiers (adjectives or adverbs)
-                if token.lower().endswith("ly") or token.lower() in {"very", "extremely"}:
+                elif token.lower().endswith("ly") or token.lower() in {"very", "extremely"}:
                     parsed["modifiers"].append(token)
 
                 # Build phrases
-                if i > 0 and tokens[i - 1].lower() in {"in", "on", "at", "with", "by"}:
-                    parsed["phrases"]["prepositional_phrases"].append(f"{tokens[i - 1]} {token}")
-                if token.lower() in {"run", "eat", "read"}:
-                    parsed["phrases"]["verb_phrases"].append(f"{token} {tokens[i + 1]}" if i + 1 < len(tokens) else token)
                 if token.lower() in {"cat", "dog", "house"}:
-                    parsed["phrases"]["noun_phrases"].append(f"{tokens[i - 1]} {token}" if i > 0 else token)
+                    parsed["phrases"]["noun_phrases"].append(token)
 
             logger.info(f"[PARSE] Tokens parsed into structure: {parsed}")
             return parsed

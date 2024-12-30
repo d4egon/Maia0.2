@@ -1,139 +1,106 @@
 ﻿document.addEventListener("DOMContentLoaded", () => {
-    const messengerIcon = document.getElementById("maia-face");
-    const talkToMaiaBtn = document.getElementById("talk-to-maia-btn");
-    const chatPopup = document.getElementById("maia-chat-popup");
+    // References
     const chatLog = document.getElementById("chat-log");
-    const inputField = document.getElementById("chat-input");
+    const chatInput = document.getElementById("chat-input");
     const sendButton = document.getElementById("chat-send-btn");
     const fileInput = document.getElementById("file-input");
-    const uploadButton = document.getElementById("upload-button");
-    const uploadFeedback = document.getElementById("upload-feedback");
+    const uploadButton = document.getElementById("chat-upload-btn");
+    const visualizationButton = document.getElementById("generate-visualization");
+    const visualizationOutput = document.getElementById("visualization-output");
+    const galleryContainer = document.getElementById("gallery-container");
 
-    let chatPopupVisible = false;
-
-    function initializeChat() {
-        if (chatPopupVisible) return;
-
-        chatPopup.classList.remove("hidden");
-        chatPopupVisible = true;
-        inputField.focus();
-    }
-
-    function showTyping() {
-        const typingMessage = document.createElement("div");
-        typingMessage.classList.add("maia-message", "typing");
-        typingMessage.textContent = "MAIA is typing...";
-        chatLog.appendChild(typingMessage);
-        chatLog.scrollTop = chatLog.scrollHeight;
-        return typingMessage;
-    }
-
-    function addMessage(sender, message, cssClass) {
-        const messageElement = document.createElement("div");
-        messageElement.classList.add(cssClass);
-        messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
-        chatLog.appendChild(messageElement);
+    // Add Message to Chat Log
+    function addMessage(sender, message) {
+        const messageDiv = document.createElement("div");
+        messageDiv.textContent = `${sender}: ${message}`;
+        chatLog.appendChild(messageDiv);
         chatLog.scrollTop = chatLog.scrollHeight;
     }
 
+    // Send Message to MAIA
     function sendMessage() {
-        const userMessage = inputField.value.trim();
-        if (!userMessage) return;
+        const message = chatInput.value.trim();
+        if (!message) return;
 
-        addMessage("You", userMessage, "user-message");
-        const typingIndicator = showTyping();
+        addMessage("You", message);
+        chatInput.value = "";
 
         fetch("/ask_maia", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ question: userMessage }),
-        })
-            .then((response) => {
-                if (!response.ok) throw new Error(`[ERROR] Server returned status ${response.status}`);
-                return response.json();
-            })
-            .then((data) => {
-                typingIndicator.remove();
-                addMessage("MAIA", data.response || "No response available.", "maia-message");
-            })
-            .catch((err) => {
-                console.error("Error:", err);
-                typingIndicator.remove();
-                addMessage("MAIA", "An error occurred. Please try again.", "maia-message");
-            });
-
-        inputField.value = "";
-        inputField.focus();
-    }
-
-    function uploadFile() {
-        if (!fileInput.files.length) {
-            uploadFeedback.innerText = "No file selected. Please choose a file to upload.";
-            return;
-        }
-
-        const file = fileInput.files[0];
-        const formData = new FormData();
-        formData.append("file", file);
-
-        uploadFeedback.innerText = "Uploading file...";
-
-        fetch("/upload", {
-            method: "POST",
-            body: formData,
+            body: JSON.stringify({ question: message }),
         })
             .then((response) => response.json())
             .then((data) => {
-                if (data.status === "success") {
-                    uploadFeedback.innerHTML = `
-                        <strong>Success:</strong> ${data.message}<br>
-                        <strong>Content Preview:</strong> ${data.summary}
-                    `;
-                } else {
-                    uploadFeedback.innerHTML = `<strong>Error:</strong> ${data.message}`;
-                }
+                addMessage("MAIA", data.response || "I didn't understand that.");
             })
-            .catch((err) => {
-                console.error("Error uploading file:", err);
-                uploadFeedback.innerText = "An unexpected error occurred during the upload.";
+            .catch(() => {
+                addMessage("MAIA", "Error: Unable to process your message.");
             });
     }
 
-    // Close chat functionality
-    document.querySelector(".close-chat").addEventListener("click", () => {
-        chatPopup.classList.add("hidden");
-        chatPopupVisible = false;
-    });
+    // Upload Files
+    function uploadFiles() {
+        const files = Array.from(fileInput.files);
+        if (!files.length) {
+            alert("No files selected.");
+            return;
+        }
 
+        files.forEach((file) => {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            fetch("/upload", { method: "POST", body: formData })
+                .then((response) => response.json())
+                .then((data) => {
+                    addMessage("MAIA", `File "${file.name}" processed: ${data.message}`);
+                })
+                .catch(() => {
+                    addMessage("MAIA", `Error processing file "${file.name}".`);
+                });
+        });
+    }
+
+    // Generate Thought Visualization
+    function generateVisualization() {
+        visualizationOutput.textContent = "Generating...";
+        fetch("/v1/visualize_thoughts")
+            .then((response) => response.json())
+            .then((data) => {
+                visualizationOutput.textContent = JSON.stringify(data.visualization, null, 2);
+            })
+            .catch(() => {
+                visualizationOutput.textContent = "Error: Unable to generate visualization.";
+            });
+    }
+
+    // Load Gallery Images
+    function loadGallery() {
+        fetch("/get_gallery_images")
+            .then((response) => response.json())
+            .then((data) => {
+                galleryContainer.innerHTML = "";
+                data.images.forEach((filename) => {
+                    const img = document.createElement("img");
+                    img.src = `static/images/${filename}`;
+                    img.alt = filename;
+                    galleryContainer.appendChild(img);
+                });
+            })
+            .catch(() => {
+                galleryContainer.textContent = "Error loading gallery.";
+            });
+    }
+
+    // Event Listeners
     sendButton.addEventListener("click", sendMessage);
-    inputField.addEventListener("keydown", (e) => {
+    chatInput.addEventListener("keydown", (e) => {
         if (e.key === "Enter") sendMessage();
     });
+    uploadButton.addEventListener("click", uploadFiles);
+    visualizationButton.addEventListener("click", generateVisualization);
 
-    uploadButton.addEventListener("click", uploadFile);
-
-    messengerIcon.addEventListener("click", initializeChat);
-    talkToMaiaBtn.addEventListener("click", initializeChat);
-});
-
-// Dynamic Gallery Loader
-document.addEventListener("DOMContentLoaded", () => {
-    const galleryContainer = document.getElementById("gallery-container");
-
-    fetch('/get_gallery_images')
-        .then(response => response.json())
-        .then(data => {
-            const uniqueFilenames = new Set(data.images || []);
-
-            uniqueFilenames.forEach(filename => {
-                const img = document.createElement("img");
-                img.src = `static/images/${filename}`;
-                img.alt = `Gallery Image ${filename}`;
-                img.loading = "lazy";
-                galleryContainer.appendChild(img);
-            });
-        })
-        .catch(err => {
-            console.error("Gallery Fetch Error:", err);
-        });
+    // Load Gallery on Page Load
+    loadGallery();
 });

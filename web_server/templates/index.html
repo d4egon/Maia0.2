@@ -1,78 +1,54 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="MAIA - An AI blending intelligence, compassion, and creativity.">
-    <meta name="author" content="Hans Agerbo">
-    <title>MAIA - The Future Is Here</title>
-    <link rel="icon" type="image/webp" href="static/favicon.webp">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self';">
-    <link rel="stylesheet" href="static/css/style.css">
-</head>
-<body>
-    <!-- Navigation Bar -->
-    <nav class="navbar" aria-label="Main Navigation">
-        <div class="logo" aria-label="MAIA Logo">MAIA</div>
-        <ul class="nav-links">
-            <li><a href="#home" aria-label="Home">Home</a></li>
-            <li><a href="#about" aria-label="About">About</a></li>
-            <li><a href="#gallery" aria-label="Gallery">Gallery</a></li>
-            <li><a href="#contact" aria-label="Contact">Contact</a></li>
-        </ul>
-        <label class="theme-switch" aria-label="Toggle Theme">
-            <input type="checkbox" id="theme-toggle">
-            <span class="slider"></span>
-        </label>
-    </nav>
+	<head>
+		<meta charset="UTF-8">
+			<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<title>M.A.I.A. Basic Interface</title>
+				<link rel="stylesheet" href="static/css/style.css">
+					<script defer="" src="static/js/script.js"></script>
+				</head>
+	<body>
+		<!-- Header -->
+		<header>
+			<h1>M.A.I.A. Interface</h1>
+		</header>
 
-    <!-- Hero Section -->
-    <section id="home" class="hero">
-        <div class="hero-content">
-            <h1>Welcome to <span class="highlight">MAIA</span></h1>
-            <p>The future is now. A perfect blend of intelligence and elegance.</p>
-            <button id="talk-to-maia-btn" class="cta-btn" aria-label="Open MAIA chat">Talk to MAIA</button>
-        </div>
-        <div class="hero-image">
-            <img src="static/images/maia6.jpg" id="maia-face" alt="AI depiction of MAIA" loading="lazy">
-        </div>
-    </section>
+		<!-- Main Content -->
+		<main>
+			<!-- Chat Section -->
+			<section id="chat-section">
+				<h2>Chat with M.A.I.A.</h2>
+				<div id="maia-chat-popup">
+					<div id="chat-log" class="chat-log"></div>
+					<input type="text" id="chat-input" placeholder="Type your message here..." />
+					<button id="chat-send-btn">Send</button>
+				</div>
+			</section>
 
-    <!-- Gallery Section -->
-    <section id="gallery" class="gallery-section">
-        <h2>Gallery</h2>
-        <div class="gallery-container" id="gallery-container">
-            <!-- Dynamically loaded -->
-        </div>
-    </section>
+			<!-- File Upload Section -->
+			<section id="upload-section">
+				<h2>Upload Files</h2>
+				<input type="file" id="file-input" multiple="">
+					<button id="chat-upload-btn">Upload</button>
+				</section>
 
-    <!-- Chat Popup Definition -->
-    <div id="maia-chat-popup" class="maia-chat-popup hidden">
-        <div class="maia-chat-header">
-            <span>M.A.I.A. Chat</span>
-            <button class="close-chat" aria-label="Close Chat">&times;</button>
-        </div>
-        <div id="chat-log" class="maia-chat-log"></div>
-        <div class="maia-chat-input">
-            <input type="text" id="chat-input" placeholder="Type your question...">
-            <button id="chat-send-btn">Send</button>
-        </div>
-        <!-- File Upload Form -->
-        <div id="file-upload">
-            <form id="upload-form" enctype="multipart/form-data">
-                <input type="file" id="file-input" name="file" accept=".txt,.pdf,.docx,.jpg,.png,.jpeg">
-                <button type="button" id="upload-button">Upload File</button>
-            </form>
-            <div id="upload-feedback"></div>
-        </div>
-    </div>
+			<!-- Visualization Section -->
+			<section id="visualization-section">
+				<h2>Thought Visualization</h2>
+				<button id="generate-visualization">Generate Visualization</button>
+				<div id="visualization-output"></div>
+			</section>
 
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2024 MAIA - All Rights Reserved</p>
-    </footer>
+			<!-- Gallery Section -->
+			<section id="gallery-section">
+				<h2>Gallery</h2>
+				<div id="gallery-container"></div>
+			</section>
+		</main>
 
-    <!-- Scripts -->
-    <script src="static/js/script.js"></script>
-</body>
+		<!-- Footer -->
+		<footer>
+			<p>&copy; 2024 M.A.I.A. - All Rights Reserved</p>
+		</footer>
+	</body>
 </html>

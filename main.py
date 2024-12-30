@@ -143,6 +143,9 @@ def index():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    """
+    Handle file uploads with optional advanced processing.
+    """
     if 'file' not in request.files:
         return jsonify({"message": "No file uploaded", "status": "error"}), 400
 
@@ -151,24 +154,44 @@ def upload_file():
         return jsonify({"message": "Invalid file type", "status": "error"}), 400
 
     filename = secure_filename(file.filename)
-    filename = f"{int(time.time())}_{filename}"  # Prevent filename collisions
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
 
     try:
+        # Save the file temporarily
         file.save(filepath)
+
+        # Parse the file
         result = file_parser.parse(filepath)
+        if not result.strip():
+            raise ValueError("File content could not be processed or is empty.")
+
+        # Advanced processing (e.g., metadata extraction) based on request parameter
+        is_advanced = request.args.get("advanced", "false").lower() == "true"
+        if is_advanced:
+            logger.info("[ADVANCED PROCESSING] Additional processing steps applied.")
+            # Add advanced-specific logic here (e.g., semantic analysis, metadata extraction)
+
+        # Store the parsed content in memory
         memory_engine.store_memory(
             text=result,
-            emotions=["neutral"],
-            extra_properties={"source": filename, "type": "upload"}
+            emotions=["neutral"],  # Placeholder emotion
+            extra_properties={"source": filename, "type": "advanced_upload" if is_advanced else "upload"}
         )
-        os.unlink(filepath)  # Clean up after processing
-        logger.info(f"[UPLOAD] File '{filename}' uploaded and processed successfully.")
+
+        # Clean up the temporary file
+        os.remove(filepath)
+
+        logger.info(f"[UPLOAD SUCCESS] File '{filename}' processed and stored successfully.")
         return jsonify({"message": "File processed successfully.", "status": "success"}), 200
+    except ValueError as ve:
+        os.remove(filepath)
+        logger.warning(f"[UPLOAD WARNING] {ve}")
+        return jsonify({"message": str(ve), "status": "warning"}), 400
     except Exception as e:
-        os.unlink(filepath)
+        os.remove(filepath)
         logger.error(f"[UPLOAD ERROR] {e}", exc_info=True)
-        return jsonify({"message": "Error processing file.", "status": "error"}), 500
+        return jsonify({"message": "An error occurred during processing.", "status": "error"}), 500
+
 
 @app.route('/ask_maia', methods=['POST'])
 def ask_maia():
