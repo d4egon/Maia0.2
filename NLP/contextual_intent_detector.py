@@ -1,7 +1,6 @@
 import logging
 from typing import Dict, List
-import nltk
-nltk.download('wordnet')
+import nltk # type: ignore
 from nltk.corpus import wordnet  # type: ignore
 from core.memory_engine import MemoryEngine
 
@@ -16,6 +15,8 @@ class ContextualIntentDetector:
 
         :param memory_engine: An instance of MemoryEngine for memory-based context analysis.
         """
+        nltk.download('wordnet')  # Download wordnet data if not already present
+        
         self.memory_engine = memory_engine
         self.keywords = {
             "greeting": ["hello", "hi", "hey", "good morning", "morning", "good evening"],
@@ -39,7 +40,7 @@ class ContextualIntentDetector:
         synonyms = set()
         for syn in wordnet.synsets(word):
             for lemma in syn.lemmas():
-                synonyms.add(lemma.name())
+                synonyms.add(lemma.name().lower())  # Convert to lowercase for consistency
         return list(synonyms)
 
     def expand_keywords(self, keywords: Dict[str, List[str]]) -> Dict[str, List[str]]:
@@ -47,13 +48,13 @@ class ContextualIntentDetector:
         Expand the keywords dictionary with synonyms for each word.
 
         :param keywords: The original keywords dictionary.
-        :return: The expanded keywords dictionary.
+        :return: The expanded keywords dictionary with unique synonyms.
         """
         expanded_keywords = {}
         for intent, words in keywords.items():
-            expanded_keywords[intent] = words + [
+            expanded_keywords[intent] = list(set(words + [
                 synonym for word in words for synonym in self.get_synonyms(word)
-            ]
+            ]))  # Use set to remove duplicates
         logger.info(f"[EXPANDED KEYWORDS] Keywords expanded with synonyms.")
         return expanded_keywords
 
@@ -81,7 +82,7 @@ class ContextualIntentDetector:
             if memory:
                 logger.info(f"[MEMORY CONTEXT] Found memory: {memory['text']} for input: '{text}'")
                 for intent, words in self.expanded_keywords.items():
-                    if any(word in memory['text'] for word in words):
+                    if any(word in memory['text'].lower() for word in words):
                         intent_scores[intent] += 2  # Higher weight for memory matches
 
             # Determine the best matching intent and calculate confidence
@@ -93,7 +94,6 @@ class ContextualIntentDetector:
             if confidence < 0.2:  # Threshold for low confidence
                 logger.info(f"[INTENT DETECTION] No significant intent detected for text: '{text}'")
                 return {"intent": "unknown", "confidence": 0.0}
-
             logger.info(f"[INTENT DETECTION] Detected intent: {best_intent} with confidence {confidence:.2f}")
             return {"intent": best_intent, "confidence": round(confidence, 2)}
         except Exception as e:

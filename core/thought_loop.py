@@ -1,4 +1,4 @@
-#/core/thought_loop.py
+# File: /core/thought_loop.py
 
 import logging
 import random
@@ -6,17 +6,23 @@ import time
 from typing import List, Dict, Optional
 from core.memory_engine import MemoryEngine
 from core.conversation_engine import ConversationEngine
+from core.emotion_engine import EmotionEngine
+from transformers import pipeline
+import spacy  # type: ignore # Assuming you want to use spaCy for more advanced NLP tasks
 
 # Configure logging
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
-# Thought Loop Module
+# Load spaCy model for NLP tasks
+nlp = spacy.load("en_core_web_sm")
+
 class ThoughtLoop:
     def __init__(self, memory_engine: MemoryEngine, thought_engine):
         self.memory_engine = memory_engine
         self.thought_engine = thought_engine
         self.running = False
+        self.emotion_engine = EmotionEngine(memory_engine)
 
     def run(self):
         """
@@ -35,6 +41,10 @@ class ThoughtLoop:
                 for word, meaning in new_words.items():
                     self.memory_engine.store_new_word(word, meaning)
 
+                # Analyze emotion
+                emotion = self.emotion_engine.process_emotion(thought)
+                self.memory_engine.tag_memory(thought, emotion)
+
                 # Simulate interaction patterns
                 self.thought_engine.learn_interaction_patterns(thought)
 
@@ -50,45 +60,3 @@ class ThoughtLoop:
         """
         self.running = False
         logger.info("[THOUGHT LOOP] Thought loop has been stopped.")
-
-# Emotion Engine Module
-class EmotionEngine:
-    def __init__(self, memory_engine: MemoryEngine):
-        self.memory_engine = memory_engine
-
-    def tag_emotion(self, thought: str) -> str:
-        """
-        Determine the emotion associated with a thought.
-        """
-        if "happy" in thought.lower():
-            return "joy"
-        elif "uncertain" in thought.lower() or "?" in thought:
-            return "doubt"
-        elif "sad" in thought.lower():
-            return "sadness"
-        else:
-            return "neutral"
-
-    def process_emotion(self, thought: str):
-        """
-        Process and tag the emotional state of a thought.
-        """
-        emotion = self.tag_emotion(thought)
-        self.memory_engine.tag_memory(thought, emotion)
-        logger.info(f"[EMOTION ENGINE] Tagged '{thought}' with emotion: {emotion}")
-        return emotion
-
-    def concurrent_thought_processing(self, thoughts: List[str]):
-        """
-        Process multiple thoughts concurrently.
-    
-        :param thoughts: List of thoughts to process.
-        """
-        from concurrent.futures import ThreadPoolExecutor
-        try:
-            with ThreadPoolExecutor() as executor:
-                results = executor.map(self.thought_engine.reflect, thoughts)
-                for result in results:
-                    logger.info(f"[CONCURRENT PROCESSING] {result}")
-        except Exception as e:
-            logger.error(f"[CONCURRENT ERROR] {e}")

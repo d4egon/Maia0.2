@@ -44,7 +44,16 @@ class NLP:
             intent = self.detect_intent(text)
             emotions = self.analyze_emotions(tokens)
 
-            context_data = {"text": text, "tokens": tokens, "parsed": parsed_data, "emotions": emotions}
+            # Enrich context data with more detailed information
+            context_data = {
+                "text": text, 
+                "tokens": tokens, 
+                "parsed": parsed_data, 
+                "emotions": emotions,
+                "subjects": parsed_data.get("subject", []),
+                "verbs": parsed_data.get("verb", []),
+                "objects": parsed_data.get("object", [])
+            }
             response = self.response_generator.generate_response(context_data, user_name, intent, context)
 
             logger.info(f"[NLP PROCESS] Text: '{text}', Intent: {intent}, Emotions: {emotions}, Response: {response}")
@@ -64,7 +73,7 @@ class NLP:
         try:
             words = text.lower().split()
             for intent, keywords in self.intent_keywords.items():
-                if any(keyword in words for keyword in keywords):
+                if any(keyword in ' '.join(words) for keyword in keywords):
                     logger.info(f"[INTENT DETECTED] Text: {text}, Intent: {intent}")
                     return intent
 
@@ -89,11 +98,29 @@ class NLP:
 
         emotions = []
         for token in tokens:
-            if token["type"] == "word" and token["value"].lower() in emotion_keywords:
+            if token["type"] == "word":
+                token_value = token["value"].lower()
                 for emotion, keywords in emotion_keywords.items():
-                    if token["value"].lower() in keywords:
+                    if token_value in keywords:
                         emotions.append(emotion)
                         break
+                # Here we could add a more nuanced emotion detection by considering modifiers or context
+
+        # If no emotions are detected, default to neutral
+        if not emotions:
+            emotions = ["neutral"]
 
         logger.info(f"[EMOTION ANALYSIS] Detected emotions: {emotions}")
-        return emotions if emotions else ["neutral"]
+        return emotions
+
+    def update_intent_keywords(self, new_keywords: Dict[str, List[str]]):
+        """
+        Update the intent keywords dictionary with new or modified keywords.
+
+        :param new_keywords: A dictionary of intents with their corresponding keyword lists.
+        """
+        try:
+            self.intent_keywords.update(new_keywords)
+            logger.info(f"[INTENT UPDATE] Updated intent keywords: {new_keywords}")
+        except Exception as e:
+            logger.error(f"[INTENT UPDATE ERROR] Failed to update keywords: {e}", exc_info=True)

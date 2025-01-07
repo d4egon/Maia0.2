@@ -2,6 +2,7 @@ import os
 import sys
 import logging
 import time
+from threading import Thread
 from functools import lru_cache
 from tempfile import NamedTemporaryFile
 from flask import Flask, render_template, request, jsonify, abort
@@ -25,18 +26,18 @@ from NLP.consciousness_engine import ConsciousnessEngine
 from NLP.intent_detector import IntentDetector
 from core.self_initiated_conversation import SelfInitiatedConversation
 from flask_socketio import SocketIO  # type: ignore
+from sentence_transformers import SentenceTransformer # type: ignore
 
 # Load Environment Variables
 load_dotenv()
 
-# Configure Logging
 logging.basicConfig(
     level=logging.INFO if os.getenv("FLASK_DEBUG", "false").lower() != "true" else logging.DEBUG,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
         logging.FileHandler("main.log"),
-        logging.StreamHandler(sys.stdout)
-    ]
+    ],
+    stream=sys.stdout
 )
 logger = logging.getLogger(__name__)
 
@@ -55,6 +56,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE_MB * 1024 * 1024  # Convert MB to bytes
 
 socketio = SocketIO(app)
+model = SentenceTransformer('fine_tuned_all_mpnet_base_v2')  # Correct initialization
 
 # Secure Headers Setup
 @app.after_request
@@ -64,6 +66,7 @@ def apply_csp_headers(response):
         "font-src 'self'; img-src 'self' data:; connect-src 'self' ws: wss:"
     )
     response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'SAMEORIGIN'  # Prevent clickjacking
     return response
 
 # Ensure Upload Folder Exists
@@ -141,6 +144,43 @@ def index():
     logger.info("[ROUTE] Index accessed.")
     return render_template('index.html')
 
+@app.route('/embed', methods=['POST'])
+def embed():
+    data = request.json
+    text = data.get('text')
+    if not text:
+        return jsonify({'error': 'No text provided'}), 400
+    embedding = model.encode(text).tolist()
+    
+    # Continuous learning: Optionally update model here with new text
+    # This would typically be done in a separate background process
+    # model.train_on_new_data(text)     embedding = model.encode(text).tolist()
+    
+    # Continuous learning: Optionally update model here with new text
+    # This would typically be done in a separate background process or thread
+    try:
+        update_model_with_text(text)
+        logger.info(f"[MODEL UPDATE] Model updated with new text: {text[:50]}...")  # Log first 50 chars for brevity
+    except Exception as e:
+        logger.error(f"[MODEL UPDATE ERROR] {e}", exc_info=True)
+    
+    return jsonify({'embedding': embedding})
+
+def update_model_with_text(text):
+    # This function would ideally run in the background or on a separate thread
+    # Here's a pseudo implementation:
+    from threading import Thread
+    def train_task(text):
+        # Prepare data for training
+        # This is a very basic example; in reality, you'd need more data pre-processing
+        tokenized_input = model.tokenize(text)
+        input_ids = tokenized_input["input_ids"]
+        # Assuming you have some way to get labels or use the text in pairs
+        # model.train_on_new_data(input_ids, label)  # Needs implementation
+        logger.info(f"[MODEL TRAIN] Training on text: {text[:50]}...")  # Log first 50 chars for brevity
+
+    Thread(target=train_task, args=(text,)).start()
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """
@@ -178,6 +218,9 @@ def upload_file():
             extra_properties={"source": filename, "type": "advanced_upload" if is_advanced else "upload"}
         )
 
+        # Continuous Learning: Train model on new file content
+        train_model_on_file_content(result)
+
         # Clean up the temporary file
         os.remove(filepath)
 
@@ -192,6 +235,11 @@ def upload_file():
         logger.error(f"[UPLOAD ERROR] {e}", exc_info=True)
         return jsonify({"message": "An error occurred during processing.", "status": "error"}), 500
 
+def train_model_on_file_content(content):
+    # This would be more complex in practice, involving data preparation and batching
+    sentences = content.split('. ')
+    for sentence in sentences:
+        update_model_with_text(sentence)  # Use our earlier function for individual sentences
 
 @app.route('/ask_maia', methods=['POST'])
 def ask_maia():
@@ -202,6 +250,9 @@ def ask_maia():
         question = data['question']
         intent = nlp_engine.detect_intent(question)
         response, _ = nlp_engine.process(question)
+
+        # Log the interaction for potential future learning
+        memory_engine.store_memory(text=f"Q: {question}\nA: {response}", emotions=["neutral"], extra_properties={"type": "conversation"})
 
         return jsonify({"response": response, "intent": intent, "status": "success"}), 200
     except Exception as e:

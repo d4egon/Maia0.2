@@ -1,10 +1,10 @@
 # File: /core/interactive_learning.py
 
 import logging
-from typing import List, Dict
+from typing import List, Dict, Optional
 
 # Configure logging
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 class InteractiveLearning:
@@ -29,10 +29,10 @@ class InteractiveLearning:
         """
         try:
             result = self.graph_client.run_query(query)
-            logger.info(f"Identified {len(result)} knowledge gaps.")
+            logger.info(f"[KNOWLEDGE GAP] Identified {len(result)} knowledge gaps.")
             return result
         except Exception as e:
-            logger.error(f"Error identifying knowledge gaps: {e}")
+            logger.error(f"[ERROR] Error identifying knowledge gaps: {e}")
             raise
 
     def ask_questions(self, knowledge_gaps: List[Dict]):
@@ -43,16 +43,16 @@ class InteractiveLearning:
         """
         for gap in knowledge_gaps:
             try:
-                logger.info(f"Querying user for example context for emotion: {gap['name']}")
+                logger.info(f"[QUERY] Querying user for example context for emotion: {gap['name']}")
                 print(f"Help me understand '{gap['name']}' better!")
                 example_context = self._get_valid_input(f"Can you give me an example of {gap['name']}? ")
                 
                 if example_context:
                     self._update_example_context(gap['id'], example_context)
                 else:
-                    logger.warning(f"No example context provided for {gap['name']}")
+                    logger.warning(f"[WARNING] No example context provided for {gap['name']}")
             except Exception as e:
-                logger.error(f"Error asking questions for {gap['name']}: {e}")
+                logger.error(f"[ERROR] Error asking questions for {gap['name']}: {e}")
 
     def _get_valid_input(self, prompt: str) -> str:
         """
@@ -80,9 +80,9 @@ class InteractiveLearning:
         """
         try:
             self.graph_client.run_query(query)
-            logger.info(f"Updated example context for node ID: {node_id}")
+            logger.info(f"[UPDATE] Updated example context for node ID: {node_id}")
         except Exception as e:
-            logger.error(f"Failed to update example context for node ID {node_id}: {e}")
+            logger.error(f"[ERROR] Failed to update example context for node ID {node_id}: {e}")
             raise
 
     def generate_follow_up_questions(self, theme: str) -> List[str]:
@@ -116,9 +116,47 @@ class InteractiveLearning:
         try:
             query = f"""
             MATCH (n) WHERE n.id = '{node_id}'
-            SET n.feedback = COALESCE(n.feedback, '') + ' | ' + '{feedback}'
+            SET n.feedback = COALESCE(n.feedback, '') + ' | ' + '{feedback.replace("'", "''")}'
             """
             self.graph_client.run_query(query)
             logger.info(f"[KNOWLEDGE REFINED] Feedback added to node {node_id}.")
         except Exception as e:
             logger.error(f"[REFINE ERROR] Failed to refine node {node_id}: {e}")
+
+    def learn_from_text(self, text: str):
+        """
+        Learn from new text input by identifying relevant themes or emotions and updating the graph database.
+
+        :param text: The text from which to learn.
+        """
+        try:
+            # Here you would implement logic to analyze text, perhaps using NLP techniques
+            # This is a placeholder for actual text analysis
+            detected_themes = ["emotion", "knowledge"]  # Example detection
+            for theme in detected_themes:
+                questions = self.generate_follow_up_questions(theme)
+                for question in questions:
+                    response = self._get_valid_input(question)
+                    if response:
+                        self._store_new_knowledge(text, theme, response)
+        except Exception as e:
+            logger.error(f"[LEARNING ERROR] Error learning from text: {e}")
+
+    def _store_new_knowledge(self, text: str, theme: str, response: str):
+        """
+        Store newly learned information in the graph database.
+
+        :param text: The original text.
+        :param theme: The theme detected in the text.
+        :param response: The user's response to the follow-up question.
+        """
+        query = f"""
+        CREATE (n:Learning {{text: '{text.replace("'", "''")}', 
+                             theme: '{theme}', 
+                             response: '{response.replace("'", "''")}'}})
+        """
+        try:
+            self.graph_client.run_query(query)
+            logger.info(f"[LEARNING] New knowledge stored for theme: {theme}")
+        except Exception as e:
+            logger.error(f"[STORAGE ERROR] Failed to store new knowledge: {e}")

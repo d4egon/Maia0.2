@@ -3,6 +3,9 @@
 import logging
 from typing import Dict, List, Tuple
 from core.emotion_engine import EmotionEngine
+from PIL import Image
+import numpy as np
+from transformers import pipeline
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -11,7 +14,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 class EmotionFusionEngine:
     def __init__(self, memory_engine, nlp_engine):
         """
-        Initialize the EmotionFusionEngine with memory and NLP engines.
+        Initialize the EmotionFusionEngine with memory and NLP engines, along with visual emotion analysis.
 
         :param memory_engine: An instance for memory operations.
         :param nlp_engine: An instance for NLP operations.
@@ -20,13 +23,21 @@ class EmotionFusionEngine:
         self.memory_engine = memory_engine
         self.nlp_engine = nlp_engine
 
-    def fuse_emotions(self, visual_input: str, text_input: str) -> str:
+        # Visual emotion analysis model
+        try:
+            self.visual_emotion_model = pipeline("image-classification", model="microsoft/resnet-50")
+            logger.info("[INIT] Visual emotion model loaded successfully.")
+        except Exception as e:
+            logger.error(f"[INIT ERROR] Failed to load visual emotion model: {e}")
+            raise
+
+    def fuse_emotions(self, visual_input: str, text_input: str) -> Tuple[str, float]:
         """
         Fuse emotions from visual analysis, text context, and memory search results.
 
-        :param visual_input: Description or path of visual input.
+        :param visual_input: Path to visual input file.
         :param text_input: Textual input to analyze.
-        :return: The final determined emotion.
+        :return: A tuple of (final emotion, total confidence).
         """
         logger.info("[FUSION] Starting emotion fusion process.")
 
@@ -40,7 +51,7 @@ class EmotionFusionEngine:
             context_emotion, context_confidence = self.analyze_context_emotion(context_data)
 
             # Decision Fusion Logic
-            final_emotion = self.determine_final_emotion(
+            final_emotion, total_confidence = self.determine_final_emotion(
                 visual_emotion, visual_confidence,
                 text_emotion, text_confidence,
                 context_emotion, context_confidence
@@ -53,25 +64,50 @@ class EmotionFusionEngine:
                 additional_data={"visual_input": visual_input, "text_input": text_input}
             )
 
-            logger.info(f"[FUSION RESULT] Final Emotion: {final_emotion}")
-            return final_emotion
+            logger.info(f"[FUSION RESULT] Final Emotion: {final_emotion} (Total Confidence: {total_confidence})")
+            return final_emotion, total_confidence
         except Exception as e:
             logger.error(f"[FUSION ERROR] {e}", exc_info=True)
-            return "neutral"  # Default to neutral if fusion fails
+            return "neutral", 0.0  # Default to neutral if fusion fails
 
     def analyze_visual_emotion(self, visual_input: str) -> Tuple[str, float]:
         """
-        Placeholder for analyzing emotions from visual data (image-based).
+        Analyze emotions from visual data using a pre-trained model.
 
-        :param visual_input: Visual input to analyze.
+        :param visual_input: Path to the image file.
         :return: Tuple of (emotion, confidence).
         """
         try:
-            logger.info("[VISUAL] No visual emotion model implemented yet.")
-            return "neutral", 0.0
+            image = Image.open(visual_input).convert('RGB')
+            predictions = self.visual_emotion_model(image)
+            # Map the predicted class to an emotion if possible, otherwise use the class name
+            emotion = self._map_prediction_to_emotion(predictions[0]['label'])
+            confidence = predictions[0]['score']
+            logger.info(f"[VISUAL] Detected Emotion: {emotion} (Confidence: {confidence})")
+            return emotion, confidence
         except Exception as e:
             logger.error(f"[VISUAL FAILED] {e}")
             return "neutral", 0.0
+
+    def _map_prediction_to_emotion(self, prediction: str) -> str:
+        """
+        Map a prediction label to a more generic emotion if possible.
+
+        :param prediction: The label predicted by the visual model.
+        :return: A mapped emotion or the prediction if no mapping exists.
+        """
+        emotion_map = {
+            "happy": ["smile", "happiness"],
+            "sad": ["sadness", "frown"],
+            "angry": ["anger", "furious"],
+            "fearful": ["fear", "scared"],
+            "surprised": ["surprise", "astonished"],
+            "neutral": ["neutral", "calm"]
+        }
+        for emotion, keywords in emotion_map.items():
+            if prediction.lower() in keywords:
+                return emotion
+        return "neutral"  # If no match, return neutral
 
     def analyze_text_emotion(self, text_input: str) -> Tuple[str, float]:
         """
@@ -116,9 +152,9 @@ class EmotionFusionEngine:
         visual_emotion: str, visual_confidence: float,
         text_emotion: str, text_confidence: float,
         context_emotion: str, context_confidence: float
-    ) -> str:
+    ) -> Tuple[str, float]:
         """
-        Determine the final emotion based on the highest cumulative confidence score.
+        Determine the final emotion based on the highest cumulative confidence score with weights.
 
         :param visual_emotion: Emotion from visual analysis.
         :param visual_confidence: Confidence score for visual emotion.
@@ -126,18 +162,18 @@ class EmotionFusionEngine:
         :param text_confidence: Confidence score for text emotion.
         :param context_emotion: Emotion from context analysis.
         :param context_confidence: Confidence score for context emotion.
-        :return: The emotion with the highest cumulative confidence.
+        :return: A tuple of (final emotion, total confidence).
         """
         emotions = {
-            visual_emotion: visual_confidence,
-            text_emotion: text_confidence,
+            visual_emotion: visual_confidence * 1.5,  # Higher weight for visual as it's less common
+            text_emotion: text_confidence * 1.2,
             context_emotion: context_confidence
         }
 
         final_emotion = max(emotions, key=emotions.get)
-        total_confidence = round(emotions[final_emotion], 2)
+        total_confidence = round(sum(emotions.values()), 2)
         logger.info(f"[FINAL EMOTION] {final_emotion} (Total Confidence: {total_confidence})")
-        return final_emotion
+        return final_emotion, total_confidence
 
     def decay_emotional_states(self):
         """
@@ -153,7 +189,7 @@ class EmotionFusionEngine:
         except Exception as e:
             logger.error(f"[DECAY ERROR] {e}", exc_info=True)
             return {}
-    
+
     def prioritize_context_emotions(self, context_emotions: List[Dict]) -> str:
         """
         Prioritize emotions based on contextual confidence and thematic relevance.
@@ -164,7 +200,7 @@ class EmotionFusionEngine:
         try:
             prioritized = max(context_emotions, key=lambda x: x.get("confidence", 0))
             logger.info(f"[PRIORITIZED EMOTION] {prioritized}")
-            return prioritized
+            return prioritized.get("emotion", "neutral")
         except Exception as e:
             logger.error(f"[PRIORITIZATION ERROR] {e}", exc_info=True)
             return "neutral"

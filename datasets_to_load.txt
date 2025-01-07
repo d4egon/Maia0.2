@@ -1,0 +1,10 @@
+agibot-world/AgiBotWorld-Alpha
+fka/awesome-chatgpt-prompts
+PowerInfer/QWQ-LONGCOT-500K
+O1-OPEN/OpenO1-SFT
+HuggingFaceTB/finemath
+OpenLeecher/lmsys_chat_1m_clean
+cfahlgren1/react-code-instructions
+FreedomIntelligence/medical-o1-reasoning-SFT
+openai/gsm8k
+HuggingFaceFW/fineweb

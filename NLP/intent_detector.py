@@ -34,26 +34,59 @@ class IntentDetector:
         :return: The detected intent or 'unknown' if no match found.
         """
         try:
+            # Convert tokens to lowercase for case-insensitive matching
+            lower_tokens = [token.lower() for token in tokens]
+            
             # First, match intents based on keywords
-            detected_intent = "unknown"
             for intent, keywords in self.intents.items():
-                if any(token.lower() in keywords for token in tokens):
-                    detected_intent = intent
-                    break
+                if self._check_keywords(lower_tokens, keywords):
+                    if intent in ["question", "ethical_question", "thematic_query"] and self._is_question(tokens):
+                        return intent
+                    elif intent not in ["question", "ethical_question", "thematic_query"]:
+                        return intent
 
-            # If no intent is matched, check related memories
-            if detected_intent == "unknown":
-                text = " ".join(tokens)
-                memory = self.memory_engine.search_memory(text)
-                if memory:
-                    logger.info(f"[MEMORY CONTEXT] Found related memory: {memory['text']} for tokens: {tokens}")
-                    if any(keyword in memory['text'] for keyword in self.intents["ethical_question"]):
-                        detected_intent = "ethical_question"
-                    elif any(keyword in memory['text'] for keyword in self.intents["thematic_query"]):
-                        detected_intent = "thematic_query"
+            # If no direct keyword match, check related memories
+            text = " ".join(tokens)
+            memory = self.memory_engine.search_memory(text)
+            if memory:
+                logger.info(f"[MEMORY CONTEXT] Found related memory: {memory['text']} for tokens: {tokens}")
+                for intent, keywords in self.intents.items():
+                    if intent in ["ethical_question", "thematic_query"] and self._check_keywords(memory['text'].lower().split(), keywords):
+                        return intent
 
-            logger.info(f"[INTENT DETECTION] Detected intent: {detected_intent} for tokens: {tokens}")
-            return detected_intent
+            logger.info(f"[INTENT DETECTION] No specific intent detected for tokens: {tokens}")
+            return "unknown"
         except Exception as e:
             logger.error(f"[INTENT DETECTION ERROR] Error detecting intent for tokens: {tokens}: {e}", exc_info=True)
             return "unknown"
+
+    def _check_keywords(self, tokens: List[str], keywords: List[str]) -> bool:
+        """
+        Helper method to check if any keyword is present in the given tokens.
+
+        :param tokens: List of tokens to check.
+        :param keywords: List of keywords to match against.
+        :return: True if any keyword matches, False otherwise.
+        """
+        return any(keyword in ' '.join(tokens) for keyword in keywords)
+
+    def _is_question(self, tokens: List[str]) -> bool:
+        """
+        Helper method to detect if the tokens form a question.
+
+        :param tokens: List of tokens to analyze.
+        :return: True if the tokens suggest a question, False otherwise.
+        """
+        return '?' in tokens or any(token.lower() in ["what", "why", "how", "when", "where", "which", "could", "do"] for token in tokens)
+
+    def update_intents(self, new_intents: Dict[str, List[str]]):
+        """
+        Update or add new intents with their associated keywords.
+
+        :param new_intents: Dictionary of intents with lists of keywords.
+        """
+        try:
+            self.intents.update(new_intents)
+            logger.info(f"[INTENT UPDATE] Updated intents: {new_intents}")
+        except Exception as e:
+            logger.error(f"[INTENT UPDATE ERROR] Failed to update intents: {e}", exc_info=True)

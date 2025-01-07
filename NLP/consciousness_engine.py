@@ -21,8 +21,6 @@ class ConsciousnessEngine:
         self.emotion_engine = emotion_engine
         self.self_awareness_state = "emerging"
 
-    ### Core Sentience Functions ###
-
     def introspect(self) -> List[str]:
         """
         Perform deep introspection based on memory, emotion, and thematic awareness.
