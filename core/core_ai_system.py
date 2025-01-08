@@ -1,4 +1,4 @@
-# backend/core_ai_system.py
+# core/core_ai_system.py
 class CoreAISystem:
     def __init__(self, db):
         self.db = db

@@ -1,7 +1,10 @@
+#NLP/nlp_engine.py
 import logging
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 from NLP.sentence_parser import SentenceParser
 from NLP.tokenizer import Tokenizer
+import requests
+from core.file_parser import FileParser
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -21,6 +24,7 @@ class NLP:
         self.neo4j_connector = neo4j_connector
         self.tokenizer = Tokenizer()
         self.sentence_parser = SentenceParser()
+        self.file_parser = FileParser()
 
         self.intent_keywords: Dict[str, List[str]] = {
             # Ethical Discussions
@@ -124,3 +128,36 @@ class NLP:
             logger.info(f"[INTENT UPDATE] Updated intent keywords: {new_keywords}")
         except Exception as e:
             logger.error(f"[INTENT UPDATE ERROR] Failed to update keywords: {e}", exc_info=True)
+
+    def fetch_internet_data(self, url: str) -> Optional[str]:
+        """
+        Fetch data from the internet.
+
+        :param url: URL to fetch data from.
+        :return: Fetched data as string or None if an error occurs.
+        """
+        try:
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            return response.text
+        except requests.RequestException as e:
+            logger.error(f"Error fetching internet data: {e}", exc_info=True)
+            return None
+
+    def process_file(self, file_path: str) -> Tuple[str, str]:
+        """
+        Process a file and generate a response.
+
+        :param file_path: Path to the file to be processed.
+        :return: A tuple of (response, intent).
+        """
+        try:
+            file_content = self.file_parser.parse(file_path)
+            if file_content:
+                return self.process(file_content)
+            else:
+                logger.warning("File content could not be processed.")
+                return "I'm sorry, I couldn't process the file content.", "error"
+        except Exception as e:
+            logger.error(f"Error processing file: {e}", exc_info=True)
+            return "An error occurred while processing the file.", "error"

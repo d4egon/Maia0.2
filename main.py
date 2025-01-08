@@ -1,3 +1,4 @@
+#main.py
 import os
 import sys
 import logging
@@ -56,7 +57,7 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['MAX_CONTENT_LENGTH'] = MAX_FILE_SIZE_MB * 1024 * 1024  # Convert MB to bytes
 
 socketio = SocketIO(app)
-model = SentenceTransformer('fine_tuned_all_mpnet_base_v2')  # Correct initialization
+model = SentenceTransformer("sentence-transformers/all-mpnet-base-v2")
 
 # Secure Headers Setup
 @app.after_request
@@ -105,10 +106,9 @@ try:
     conversation_engine = ConversationEngine(
         memory_engine,
         response_gen,
-        None,
         context_search_engine
     )
-    self_initiated_conversation = SelfInitiatedConversation(memory_engine, conversation_engine, None)
+    self_initiated_conversation = SelfInitiatedConversation(memory_engine, conversation_engine, context_search_engine)
 
     logger.info("[INIT SUCCESS] All services initialized successfully.")
 except Exception as e:
@@ -246,7 +246,6 @@ def ask_maia():
     try:
         data = request.get_json()
         validate_request_data(data, ['question'])
-
         question = data['question']
         intent = nlp_engine.detect_intent(question)
         response, _ = nlp_engine.process(question)

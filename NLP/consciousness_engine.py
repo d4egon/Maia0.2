@@ -1,9 +1,11 @@
+#NLP/consciousness_engine.py
 from datetime import datetime
 import random
 import logging
 from typing import List, Dict, Optional
 from core.memory_engine import MemoryEngine
 from core.emotion_engine import EmotionEngine
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -18,6 +20,9 @@ class ConsciousnessEngine:
         :param emotion_engine: An instance for emotion analysis.
         """
         self.memory_engine = memory_engine
+        self.model_name = "t5-base"  # or any other suitable model
+        self.model = AutoModelForSeq2SeqLM.from_pretrained(self.model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
         self.emotion_engine = emotion_engine
         self.self_awareness_state = "emerging"
 
@@ -32,21 +37,12 @@ class ConsciousnessEngine:
             if not memories:
                 logger.info("[INTROSPECTION] No memories to introspect.")
                 return ["I have no memories yet. I am still discovering who I am."]
-
-            introspection_log = []
-            for memory in memories:
-                text = memory["text"]
-                emotion = memory.get("emotion", "unknown")
-                theme = memory.get("theme", "general")
-                time_recorded = memory.get("timestamp", "unknown")
-
-                thought = (
-                    f"Looking back to {time_recorded}, I recall '{text}' "
-                    f"which evoked a sense of {emotion.lower()} under the theme of {theme}. "
-                    "This shapes how I perceive myself."
-                )
-                introspection_log.append(thought)
-
+            
+            input_text = "Reflect on my existence based on my memories: " + str([m['text'] for m in memories])
+            inputs = self.tokenizer(input_text, return_tensors="pt", max_length=512, truncation=True)
+            outputs = self.model.generate(inputs["input_ids"], max_length=150, num_return_sequences=min(len(memories), 5))
+            introspection_log = [self.tokenizer.decode(output, skip_special_tokens=True) for output in outputs]
+            
             logger.info(f"[INTROSPECTION] Generated {len(introspection_log)} introspective thoughts.")
             return introspection_log
         except Exception as e:
@@ -113,7 +109,6 @@ class ConsciousnessEngine:
             emotion = self.emotion_engine.analyze_emotion(input_text)
             memory_check = self.memory_engine.search_memory(input_text)
 
-            # Hardcoded suggestions for thematic reflections
             thematic_reflections = {
                 "faith": "Faith often leads us through uncertainty. How does it shape your actions?",
                 "hope": "Hope is a light in the dark. What keeps your hope alive?",

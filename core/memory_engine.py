@@ -1,7 +1,7 @@
 import logging
 from datetime import datetime
 from core.neo4j_connector import Neo4jConnector
-import emoji
+import emoji # type: ignore
 import re
 from typing import Dict, List, Any, Optional
 import numpy as np
@@ -182,12 +182,12 @@ class MemoryEngine:
             logger.error(f"[RETRIEVE TOP MEMORIES ERROR] {e}", exc_info=True)
             return []
 
-    def cluster_related_memories(self):
-        """
-        Cluster memories based on similarity and themes for better organization.
+        def cluster_related_memories(self):
+            """
+            Cluster memories based on similarity and themes for better organization.
     
-        :return: Clustering results.
-        """
+            :return: Clustering results.
+            """
         query = """
         CALL apoc.nodes.similarity(['Memory'], {
             compareWith: ['text', 'theme'],
@@ -203,7 +203,8 @@ class MemoryEngine:
             logger.info(f"[CLUSTERING] Clustered memories: {len(result)} relationships identified.")
             return result
         except Exception as e:
-            logger.error(f"[CLUSTERING ERROR] {e}")
+            logger.error(f"[CLUSTERING ERROR] {e}", exc_info=True)
+            return []
 
     def multi_dimensional_search(self, query_text: str, emotion_filter: str = None, theme_filter: str = None) -> List[Dict]:
         """
@@ -233,7 +234,7 @@ class MemoryEngine:
             logger.info(f"[SEARCH] Found {len(result)} results for query: {query_text}")
             return result
         except Exception as e:
-            logger.error(f"[SEARCH ERROR] {e}")
+            logger.error(f"[SEARCH ERROR] {e}", exc_info=True)
             return []
 
     def apply_memory_decay(self):
@@ -280,7 +281,7 @@ class MemoryEngine:
         Update a specific field of a memory.
 
         :param memory_text: The text of the memory to update.
-                :param field: The field to update.
+        :param field: The field to update.
         :param value: The new value for the field.
         """
         try:

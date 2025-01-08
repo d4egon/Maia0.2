@@ -1,13 +1,10 @@
-# File: /core/thought_loop.py
-
 import logging
 import random
 import time
 from typing import List, Dict, Optional
 from core.memory_engine import MemoryEngine
-from core.conversation_engine import ConversationEngine
 from transformers import pipeline
-import spacy  # type: ignore # Assuming you want to use spaCy for more advanced NLP tasks
+import spacy   # type: ignore
 
 # Configure logging
 logger = logging.getLogger(__name__)

@@ -1,13 +1,14 @@
 ﻿from NLP.response_generator import ResponseGenerator
 from core.context_search import ContextSearchEngine
 from core.memory_engine import MemoryEngine
-from core.thought_engine import ThoughtEngine
 from core.collaborative_learning import CollaborativeLearning
 from core.semantic_builder import SemanticBuilder
 from sentence_transformers import SentenceTransformer, InputExample, losses # type: ignore
 from torch.utils.data import DataLoader
+from typing import List
 import logging
 import os
+
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -15,18 +16,16 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 
 class ConversationEngine:
     def __init__(self, memory_engine: MemoryEngine, response_generator: ResponseGenerator,
-                 thought_engine: ThoughtEngine, context_search: ContextSearchEngine):
+                 context_search: ContextSearchEngine):
         """
         Initialize the ConversationEngine with necessary components and model for continuous learning.
 
         :param memory_engine: Handles memory operations.
         :param response_generator: Generates responses based on input.
-        :param thought_engine: Processes thoughts or generates new content.
         :param context_search: Searches for relevant context from past interactions.
         """
         self.memory_engine = memory_engine
         self.response_generator = response_generator
-        self.thought_engine = thought_engine
         self.context_search = context_search
         self.collaborative_learning = CollaborativeLearning(self)
         self.semantic_builder = SemanticBuilder(memory_engine.db)
@@ -73,12 +72,20 @@ class ConversationEngine:
                     return response
 
             # Step 4: Thought Generation with Collaborative Doubt Handling
-            generated_thought = self.thought_engine.reflect(user_input)
-            if generated_thought:
-                self.memory_engine.store_memory(user_input, ["reflective"])
-                response = self.response_generator.generate_response(generated_thought, user_input)
-                logger.info(f"[THOUGHT RESPONSE] {response}")
-                return response
+            def process_thought(input_text):
+                from core.thought_engine import ThoughtEngine  # Local import
+                thought_engine = ThoughtEngine(self.memory_engine.db)  # Assuming db is available
+                generated_thought = thought_engine.reflect(input_text)
+                if generated_thought:
+                    self.memory_engine.store_memory(user_input, ["reflective"])
+                    response = self.response_generator.generate_response(generated_thought, user_input)
+                    logger.info(f"[THOUGHT RESPONSE] {response}")
+                    return response
+                return None
+
+            thought_response = process_thought(user_input)
+            if thought_response:
+                return thought_response
 
             # Step 5: Fallback Response with Semantic Exploration
             fallback_response = self._generate_fallback_response(user_input)

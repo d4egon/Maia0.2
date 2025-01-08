@@ -1,12 +1,7 @@
 {
   "ExpandedNodes": [
-    "",
-    "\\core",
-    "\\NLP",
-    "\\web_server",
-    "\\web_server\\static",
-    "\\web_server\\static\\js"
+    "\\model_training",
+    "\\testing"
   ],
-  "SelectedNode": "\\core\\background_task_manager.py",
   "PreviewInSolutionExplorer": false
 }

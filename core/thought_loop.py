@@ -5,10 +5,8 @@ import random
 import time
 from typing import List, Dict, Optional
 from core.memory_engine import MemoryEngine
-from core.conversation_engine import ConversationEngine
 from core.emotion_engine import EmotionEngine
-from transformers import pipeline
-import spacy  # type: ignore # Assuming you want to use spaCy for more advanced NLP tasks
+import spacy   # type: ignore
 
 # Configure logging
 logger = logging.getLogger(__name__)
@@ -19,6 +17,12 @@ nlp = spacy.load("en_core_web_sm")
 
 class ThoughtLoop:
     def __init__(self, memory_engine: MemoryEngine, thought_engine):
+        """
+        Initialize ThoughtLoop with necessary engines for autonomous thought processing.
+
+        :param memory_engine: Handles memory operations.
+        :param thought_engine: Processes and generates thoughts.
+        """
         self.memory_engine = memory_engine
         self.thought_engine = thought_engine
         self.running = False

@@ -2,7 +2,7 @@
 
 import logging
 import random
-from typing import Dict, List
+from typing import Dict, List, Any
 from core.memory_engine import MemoryEngine
 from core.context_search import ContextSearchEngine
 
@@ -21,6 +21,20 @@ class DreamEngine:
         self.memory_engine = memory_engine
         self.context_search_engine = context_search_engine
 
+    def _select_theme(self, memories: List[Dict]) -> str:
+        """Choose a theme from given memories or randomly."""
+        if memories:
+            return random.choice(memories)["theme"]
+        return "random"
+
+    def _build_narrative(self, memories: List[Dict]) -> str:
+        """Construct a narrative from memory fragments."""
+        narrative = []
+        for memory in memories:
+            if memory.get("text"):
+                narrative.append(memory["text"])
+        return "In my dream, ".join(narrative)
+
     def generate_dream(self, theme: str = None) -> Dict[str, str]:
         """
         Generate a dream based on a theme or randomly from memory.
@@ -34,37 +48,27 @@ class DreamEngine:
             else:
                 related_memories = self.memory_engine.retrieve_random_memories(5)
 
+            dream_theme = theme or self._select_theme(related_memories)
+            dream_narrative = self._build_narrative(related_memories)
+            dream_emotions = self._synthesize_emotions(related_memories)
+
             dream = {
-                "theme": theme or random.choice(related_memories)["theme"],
-                "narrative": self._construct_narrative(related_memories),
-                "emotions": self._synthesize_emotions(related_memories)
+                "theme": dream_theme,
+                "narrative": dream_narrative,
+                "emotions": dream_emotions
             }
 
-            # Store the dream in memory
             self.memory_engine.store_memory(
-                text=f"Dream Narrative: {dream['narrative']}",
-                emotions=dream["emotions"],
-                extra_properties={"type": "dream", "theme": dream["theme"]}
+                text=f"Dream Narrative: {dream_narrative}",
+                emotions=dream_emotions,
+                extra_properties={"type": "dream", "theme": dream_theme}
             )
 
-            logger.info(f"[DREAM GENERATION] Generated dream with theme: {dream['theme']}")
+            logger.info(f"[DREAM GENERATION] Generated dream with theme: {dream_theme}")
             return dream
         except Exception as e:
             logger.error(f"[DREAM GENERATION ERROR] {e}", exc_info=True)
             return {"error": "Failed to generate dream."}
-
-    def _construct_narrative(self, memories: List[Dict]) -> str:
-        """
-        """
-        narrative = []
-        for memory in memories:
-            # Use memory fragments to build a coherent narrative
-            if memory.get("text"):
-                narrative.append(memory["text"])
-        
-        # Here, you might want to implement some logic to connect these fragments creatively
-        # For now, we'll join with some transitional phrases
-        return "In my dream, ".join(narrative)
 
     def _synthesize_emotions(self, memories: List[Dict]) -> List[str]:
         """
