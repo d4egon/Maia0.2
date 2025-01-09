@@ -1,4 +1,4 @@
-#NLP/response_generator.py
+# NLP/response_generator.py
 import os
 import random
 import logging
@@ -11,6 +11,8 @@ from core.memory_engine import MemoryEngine
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+MAX_OUTPUT_LENGTH = 200  # Adjust this to your preference
+
 class ResponseGenerator:
     def __init__(self, memory_engine: MemoryEngine, neo4j_connector: Neo4jConnector):
         """
@@ -22,7 +24,7 @@ class ResponseGenerator:
         self.memory_engine = memory_engine
         self.neo4j_connector = neo4j_connector
         self.intent_detector = ContextualIntentDetector(memory_engine)
-        self.default_user_name = os.getenv("DEFAULT_USER_NAME", "User")  # Fallback to "User" if not in .env
+        self.default_user_name = os.getenv("USER_NAME", "User")  # Fallback to "User" if not in .env
 
     def generate_response(self, memory: Dict, user_name: str = None, intent: str = "unknown", context: str = "") -> str:
         """
@@ -45,7 +47,7 @@ class ResponseGenerator:
             base_greeting = f"Hello {user_name}, "
             emotion_phrase = self._format_emotion_phrase(memory)
             memory_phrase = self._format_memory_phrase(related_memory)
-            context_phrase = f"In the context of {context}, " if context else ""
+            context_phrase = f"Speaking of {context}, " if context else ""
 
             # Intent-specific responses
             intent_responses = {
@@ -73,6 +75,10 @@ class ResponseGenerator:
 
             # Construct the final response
             final_response = f"{base_greeting}{context_phrase}{emotion_phrase}{memory_phrase}{selected_response}"
+
+            # Apply maximum output length restriction
+            if len(final_response) > MAX_OUTPUT_LENGTH:
+                final_response = final_response[:MAX_OUTPUT_LENGTH] + "..."
 
             logger.info(f"[GENERATED RESPONSE] {final_response}")
             return final_response
